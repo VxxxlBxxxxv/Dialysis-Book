@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { DialysisSession } from "../types";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import { getFormattedTime } from "./date";
 
 export   const generateAndSharePDF = async (sessions:DialysisSession[],type) => {
