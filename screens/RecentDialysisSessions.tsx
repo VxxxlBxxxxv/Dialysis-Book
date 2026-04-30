@@ -6,7 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import Button from "../components/HeaderButton";
 import Info from "../components/Info";
 
-import { generateAndSharePDF } from "../util/pdfGeneration";
+import { generateAndShareMarkdown } from "../util/markdownGeneration";
 
 
 function RecentDialysisSessions() {
@@ -37,7 +37,7 @@ function RecentDialysisSessions() {
           name="share"
           size={18}
           color="white"
-          onPress={()=>generateAndSharePDF(recentSessions,"Recent")} 
+          onPress={() => generateAndShareMarkdown(recentSessions)}
         />
       ),
     });

@@ -5,7 +5,7 @@ import Sessions from "../components/Sessions";
 import Info from "../components/Info";
 import Button from "../components/HeaderButton";
 import { useNavigation } from "@react-navigation/native";
-import { generateAndSharePDF } from "../util/pdfGeneration";
+import { generateAndShareMarkdown } from "../util/markdownGeneration";
 
 const AllDialysisSessions = () => {
   const { sessions } = useContext(SessionsContext);
@@ -28,11 +28,11 @@ const AllDialysisSessions = () => {
           name="share"
           size={18}
           color="white"
-          onPress={()=>generateAndSharePDF(sessions,"All")} 
+          onPress={() => generateAndShareMarkdown(sessions)}
         />
       ),
     });
-  }, []);
+  }, [navigation, sessions]);
 
   return sessions.length > 0 ? (
     <Sessions sessions={sessions} />
