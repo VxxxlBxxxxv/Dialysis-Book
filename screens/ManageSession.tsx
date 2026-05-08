@@ -16,6 +16,7 @@ import { SessionsContext } from "../store/session-context";
 import { getFormattedDate, getFormattedTime } from "../util/date";
 
 import Button from "../components/Button";
+import WeightInput from "../components/WeightInput";
 
 const ManageSession = ({ navigation, route }) => {
   const { sessions, addSession, deleteSession, updateSession } =
@@ -443,32 +444,18 @@ const ManageSession = ({ navigation, route }) => {
           </View>
 
           <View>
-            <Text style={styles.labelText}>Pre Dialysis Weight  (in kg)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Pre Dialysis Weight"
-              keyboardType="numeric"
+            <WeightInput
+              label="Pre Dialysis Weight (in kg)"
               value={sessionData.weightBefore}
-              placeholderTextColor="gray"
-              onChangeText={(enteredText) =>
-                setSessionData((prev) => ({
-                  ...prev,
-                  weightBefore: enteredText,
-                }))
+              onChange={(text) =>
+                setSessionData((prev) => ({ ...prev, weightBefore: text }))
               }
             />
-            <Text style={styles.labelText}>Post Dialysis Weight (in kg)</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter Post Dialysis Weight"
-              keyboardType="numeric"
-              placeholderTextColor="gray"
+            <WeightInput
+              label="Post Dialysis Weight (in kg)"
               value={sessionData.weightAfter}
-              onChangeText={(enteredText) =>
-                setSessionData((prev) => ({
-                  ...prev,
-                  weightAfter: enteredText,
-                }))
+              onChange={(text) =>
+                setSessionData((prev) => ({ ...prev, weightAfter: text }))
               }
             />
             <Text style={styles.labelText}>Notes</Text>
