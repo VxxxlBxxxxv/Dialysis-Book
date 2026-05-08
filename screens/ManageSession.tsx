@@ -17,6 +17,7 @@ import { getFormattedDate, getFormattedTime } from "../util/date";
 
 import Button from "../components/Button";
 import WeightInput from "../components/WeightInput";
+import BPStepper from "../components/BPStepper";
 
 const ManageSession = ({ navigation, route }) => {
   const { sessions, addSession, deleteSession, updateSession } =
@@ -34,6 +35,7 @@ const ManageSession = ({ navigation, route }) => {
     weightAfter: "",
     notes: "",
     preDialysisBP: { systolic: "", diastolic: "" },
+    midDialysisBP: { systolic: "", diastolic: "" },
     postDialysisBP: { systolic: "", diastolic: "" },
   });
 
@@ -63,6 +65,10 @@ const ManageSession = ({ navigation, route }) => {
         preDialysisBP: {
           diastolic: selectedSession.preDialysisBP.diastolic.toString(),
           systolic: selectedSession.preDialysisBP.systolic.toString(),
+        },
+        midDialysisBP: {
+          diastolic: (selectedSession.midDialysisBP?.diastolic ?? "").toString(),
+          systolic: (selectedSession.midDialysisBP?.systolic ?? "").toString(),
         },
         postDialysisBP: {
           diastolic: selectedSession.postDialysisBP.diastolic.toString(),
@@ -101,7 +107,6 @@ const ManageSession = ({ navigation, route }) => {
       sessionData.postDialysisBP.systolic ||
       sessionData.postDialysisBP.diastolic
     ) {
-      // Validate postDialysisBP
       if (
         !isValidNumber(sessionData.postDialysisBP.systolic) ||
         !isValidNumber(sessionData.postDialysisBP.diastolic)
@@ -109,6 +114,22 @@ const ManageSession = ({ navigation, route }) => {
         Alert.alert(
           "Error",
           "Post Dialysis Blood Pressure values should be a number and not empty."
+        );
+        return false;
+      }
+    }
+
+    if (
+      sessionData.midDialysisBP.systolic ||
+      sessionData.midDialysisBP.diastolic
+    ) {
+      if (
+        !isValidNumber(sessionData.midDialysisBP.systolic) ||
+        !isValidNumber(sessionData.midDialysisBP.diastolic)
+      ) {
+        Alert.alert(
+          "Error",
+          "Mid Dialysis Blood Pressure values should be a number"
         );
         return false;
       }
@@ -164,6 +185,10 @@ const ManageSession = ({ navigation, route }) => {
         systolic: Number(sessionData.postDialysisBP.systolic),
         diastolic: Number(sessionData.postDialysisBP.diastolic),
       },
+      midDialysisBP: {
+        systolic: Number(sessionData.midDialysisBP.systolic),
+        diastolic: Number(sessionData.midDialysisBP.diastolic),
+      },
       preDialysisBP: {
         systolic: Number(sessionData.preDialysisBP.systolic),
         diastolic: Number(sessionData.preDialysisBP.diastolic),
@@ -187,6 +212,10 @@ const ManageSession = ({ navigation, route }) => {
       postDialysisBP: {
         systolic: Number(sessionData.postDialysisBP.systolic),
         diastolic: Number(sessionData.postDialysisBP.diastolic),
+      },
+      midDialysisBP: {
+        systolic: Number(sessionData.midDialysisBP.systolic),
+        diastolic: Number(sessionData.midDialysisBP.diastolic),
       },
       preDialysisBP: {
         systolic: Number(sessionData.preDialysisBP.systolic),
@@ -355,91 +384,78 @@ const ManageSession = ({ navigation, route }) => {
             </View>
           </View>
           <View>
-            <Text style={styles.labelText}> Pre Dialysis Blood Pressure</Text>
+            <Text style={styles.labelText}>Давление до диализа</Text>
             <View style={styles.bpContainer}>
-              <KeyboardAvoidingView style={styles.bpReadingContainer}>
-                <Text>Systolic</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textInput2]}
-                  value={sessionData.preDialysisBP.systolic}
-                  placeholderTextColor="gray"
-                  placeholder="Enter here"
-                  keyboardType="numeric"
-                  onChangeText={(enteredText) =>
-                    setSessionData((prev) => ({
-                      ...sessionData,
-                      preDialysisBP: {
-                        ...prev.preDialysisBP,
-                        systolic: enteredText,
-                      },
-                    }))
-                  }
-                />
-              </KeyboardAvoidingView>
-
-              <View style={styles.bpReadingContainer}>
-                <Text>Diastolic</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textInput2]}
-                  value={sessionData.preDialysisBP.diastolic}
-                  placeholderTextColor="gray"
-                  keyboardType="numeric"
-                  placeholder="Enter here"
-                  onChangeText={(enteredText) =>
-                    setSessionData((prev) => ({
-                      ...sessionData,
-                      preDialysisBP: {
-                        ...prev.preDialysisBP,
-                        diastolic: enteredText,
-                      },
-                    }))
-                  }
-                />
-              </View>
+              <BPStepper
+                label="Систола"
+                value={sessionData.preDialysisBP.systolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    preDialysisBP: { ...prev.preDialysisBP, systolic: text },
+                  }))
+                }
+              />
+              <BPStepper
+                label="Диастола"
+                value={sessionData.preDialysisBP.diastolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    preDialysisBP: { ...prev.preDialysisBP, diastolic: text },
+                  }))
+                }
+              />
             </View>
           </View>
           <View>
-            <Text style={styles.labelText}> Post Dialysis Blood Pressure</Text>
+            <Text style={styles.labelText}>Давление через 2 часа</Text>
             <View style={styles.bpContainer}>
-              <View style={styles.bpReadingContainer}>
-                <Text>Systolic</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textInput2]}
-                  value={sessionData.postDialysisBP.systolic}
-                  placeholder="Enter here"
-                  placeholderTextColor="gray"
-                  keyboardType="numeric"
-                  onChangeText={(enteredText) =>
-                    setSessionData((prev) => ({
-                      ...sessionData,
-                      postDialysisBP: {
-                        ...prev.postDialysisBP,
-                        systolic: enteredText,
-                      },
-                    }))
-                  }
-                />
-              </View>
-
-              <View style={styles.bpReadingContainer}>
-                <Text>Diastolic</Text>
-                <TextInput
-                  style={[styles.textInput, styles.textInput2]}
-                  value={sessionData.postDialysisBP.diastolic}
-                  placeholderTextColor="gray"
-                  placeholder="Enter here"
-                  keyboardType="numeric"
-                  onChangeText={(enteredText) =>
-                    setSessionData((prev) => ({
-                      ...sessionData,
-                      postDialysisBP: {
-                        ...prev.postDialysisBP,
-                        diastolic: enteredText,
-                      },
-                    }))
-                  }
-                />
-              </View>
+              <BPStepper
+                label="Систола"
+                value={sessionData.midDialysisBP.systolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    midDialysisBP: { ...prev.midDialysisBP, systolic: text },
+                  }))
+                }
+              />
+              <BPStepper
+                label="Диастола"
+                value={sessionData.midDialysisBP.diastolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    midDialysisBP: { ...prev.midDialysisBP, diastolic: text },
+                  }))
+                }
+              />
+            </View>
+          </View>
+          <View>
+            <Text style={styles.labelText}>Давление после диализа</Text>
+            <View style={styles.bpContainer}>
+              <BPStepper
+                label="Систола"
+                value={sessionData.postDialysisBP.systolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    postDialysisBP: { ...prev.postDialysisBP, systolic: text },
+                  }))
+                }
+              />
+              <BPStepper
+                label="Диастола"
+                value={sessionData.postDialysisBP.diastolic}
+                onChange={(text) =>
+                  setSessionData((prev) => ({
+                    ...prev,
+                    postDialysisBP: { ...prev.postDialysisBP, diastolic: text },
+                  }))
+                }
+              />
             </View>
           </View>
 

@@ -31,6 +31,7 @@ export type DialysisSession = {
   weightAfter: number;   // in kg
   notes?: string;
   preDialysisBP:{ systolic :number,diastolic:number},
+  midDialysisBP:{systolic:number,diastolic:number},
   postDialysisBP:{systolic:number,diastolic:number}
 };
 

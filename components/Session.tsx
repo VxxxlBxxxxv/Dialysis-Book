@@ -17,6 +17,7 @@ function Session({
   notes,
   id,
   preDialysisBP,
+  midDialysisBP,
   postDialysisBP,
 }) {
   const navigation = useNavigation<NavigationProp>();
@@ -56,7 +57,7 @@ function Session({
           <View style={styles.row}>
             <Ionicons name="analytics" size={16} color="#DB3A3A" />
             <Text >
-              Pre BP : {preDialysisBP.systolic}/ {preDialysisBP.diastolic}
+              До: {preDialysisBP.systolic}/{preDialysisBP.diastolic}
             </Text>
           </View>
         </View>
@@ -74,9 +75,17 @@ function Session({
           <View style={[styles.row, { marginRight: "3%" }]}>
             <Ionicons name="analytics" size={16} color="#DB3A3A" />
             <Text >
-              Post BP : {postDialysisBP.systolic}/ {postDialysisBP.diastolic}
+              После: {postDialysisBP.systolic}/{postDialysisBP.diastolic}
             </Text>
           </View>
+          {midDialysisBP && (midDialysisBP.systolic || midDialysisBP.diastolic) ? (
+            <View style={styles.row}>
+              <Ionicons name="analytics" size={16} color="#DB3A3A" />
+              <Text>
+                2ч: {midDialysisBP.systolic}/{midDialysisBP.diastolic}
+              </Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
