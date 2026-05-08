@@ -1,5 +1,4 @@
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -9,15 +8,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import GlobalColors from "../constants/Colors";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useContext, useEffect, useLayoutEffect, useState } from "react";
 import { SessionsContext } from "../store/session-context";
 import { getFormattedDate, getFormattedTime } from "../util/date";
-
 import Button from "../components/Button";
 import WeightInput from "../components/WeightInput";
-import BPStepper from "../components/BPStepper";
 
 const ManageSession = ({ navigation, route }) => {
   const { sessions, addSession, deleteSession, updateSession } =
@@ -33,6 +29,7 @@ const ManageSession = ({ navigation, route }) => {
     endTime: new Date(),
     weightBefore: "",
     weightAfter: "",
+    dryWeight: "",
     notes: "",
     preDialysisBP: { systolic: "", diastolic: "" },
     midDialysisBP: { systolic: "", diastolic: "" },
@@ -40,475 +37,280 @@ const ManageSession = ({ navigation, route }) => {
   });
 
   const selectedSessionId = route?.params?.selectedSession;
-
   const isEditing = selectedSessionId;
-
-  const selectedSession = sessions.filter(
-    (session) => session.id === selectedSessionId
-  )[0];
+  const selectedSession = sessions.find((s) => s.id === selectedSessionId);
+  const lastSession = sessions.length > 0 ? sessions[0] : null;
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: isEditing ? "Edit Session" : "Add Session",
+      title: isEditing ? "Редактировать" : "Новый сеанс",
     });
   }, []);
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing && selectedSession) {
       setSessionData({
         date: new Date(selectedSession.date),
         startTime: new Date(selectedSession.startTime),
         endTime: new Date(selectedSession.endTime),
-        weightAfter: selectedSession.weightAfter.toString(),
-        weightBefore: selectedSession.weightBefore.toString(),
-        notes: selectedSession.notes,
+        weightBefore: selectedSession.weightBefore?.toString() || "",
+        weightAfter: selectedSession.weightAfter?.toString() || "",
+        dryWeight: selectedSession.dryWeight?.toString() || "",
+        notes: selectedSession.notes || "",
         preDialysisBP: {
-          diastolic: selectedSession.preDialysisBP.diastolic.toString(),
-          systolic: selectedSession.preDialysisBP.systolic.toString(),
+          systolic: selectedSession.preDialysisBP?.systolic?.toString() || "",
+          diastolic: selectedSession.preDialysisBP?.diastolic?.toString() || "",
         },
         midDialysisBP: {
-          diastolic: (selectedSession.midDialysisBP?.diastolic ?? "").toString(),
-          systolic: (selectedSession.midDialysisBP?.systolic ?? "").toString(),
+          systolic: selectedSession.midDialysisBP?.systolic?.toString() || "",
+          diastolic: selectedSession.midDialysisBP?.diastolic?.toString() || "",
         },
         postDialysisBP: {
-          diastolic: selectedSession.postDialysisBP.diastolic.toString(),
-          systolic: selectedSession.postDialysisBP.systolic.toString(),
+          systolic: selectedSession.postDialysisBP?.systolic?.toString() || "",
+          diastolic: selectedSession.postDialysisBP?.diastolic?.toString() || "",
         },
       });
+    } else if (lastSession) {
+      setSessionData((prev) => ({
+        ...prev,
+        dryWeight: lastSession.dryWeight?.toString() || "",
+      }));
     }
   }, []);
 
-  function validateInput() {
-    // Helper function to check if a value is a valid number
-    const isValidNumber = (value: any) => !isNaN(Number(value)) && value !== "";
+  const toNum = (val: string) => (val !== "" ? Number(val) : 0);
 
-    // Validate startTime and endTime
-    const start = new Date(sessionData.startTime);
-    const end = new Date(sessionData.endTime);
+  const prevWeightBefore = lastSession?.weightBefore || 50;
+  const dryWeightNum =
+    sessionData.dryWeight !== "" ? parseFloat(sessionData.dryWeight) : 0;
 
-    if (
-      sessionData.preDialysisBP.systolic ||
-      sessionData.preDialysisBP.diastolic
-    ) {
-      // Validate preDialysisBP
-      if (
-        !isValidNumber(sessionData.preDialysisBP.systolic) ||
-        !isValidNumber(sessionData.preDialysisBP.diastolic)
-      ) {
-        Alert.alert(
-          "Error",
-          "Pre Dialysis Blood Pressure values should be a number"
-        );
-        return false;
-      }
-    }
-
-    if (
-      sessionData.postDialysisBP.systolic ||
-      sessionData.postDialysisBP.diastolic
-    ) {
-      if (
-        !isValidNumber(sessionData.postDialysisBP.systolic) ||
-        !isValidNumber(sessionData.postDialysisBP.diastolic)
-      ) {
-        Alert.alert(
-          "Error",
-          "Post Dialysis Blood Pressure values should be a number and not empty."
-        );
-        return false;
-      }
-    }
-
-    if (
-      sessionData.midDialysisBP.systolic ||
-      sessionData.midDialysisBP.diastolic
-    ) {
-      if (
-        !isValidNumber(sessionData.midDialysisBP.systolic) ||
-        !isValidNumber(sessionData.midDialysisBP.diastolic)
-      ) {
-        Alert.alert(
-          "Error",
-          "Mid Dialysis Blood Pressure values should be a number"
-        );
-        return false;
-      }
-    }
-
-    if (sessionData.weightBefore) {
-      // Validate weightBefore
-      if (!isValidNumber(sessionData.weightBefore)) {
-        Alert.alert(
-          "Error",
-          "Pre Dialysis Weight should be a number and not empty."
-        );
-        return false;
-      }
-    }
-
-    if (sessionData.weightAfter) {
-      // Validate weightAfter
-      if (!isValidNumber(sessionData.weightAfter)) {
-        Alert.alert(
-          "Error",
-          "Post Dialysis Weight should be a number and not empty."
-        );
-        return false;
-      }
-    }
-
-    console.log(sessionData);
-
-    if (sessionData.weightAfter && sessionData.weightBefore) {
-      if (Number(sessionData.weightAfter) > Number(sessionData.weightBefore)) {
-        Alert.alert(
-          "Error",
-          "Post Dialysis Weight must be smaller than Pre Dialysis Weight"
-        );
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function addSessionHandler() {
-    if (!validateInput()) return;
-    const newSession = {
+  function saveHandler() {
+    const data = {
       date: getFormattedDate(sessionData.date),
       startTime: sessionData.startTime.toString(),
       endTime: sessionData.endTime.toString(),
-      weightBefore: Number(sessionData.weightBefore),
-      weightAfter: Number(sessionData.weightAfter),
+      weightBefore: toNum(sessionData.weightBefore),
+      weightAfter: toNum(sessionData.weightAfter),
+      dryWeight: toNum(sessionData.dryWeight),
       notes: sessionData.notes,
-      postDialysisBP: {
-        systolic: Number(sessionData.postDialysisBP.systolic),
-        diastolic: Number(sessionData.postDialysisBP.diastolic),
+      preDialysisBP: {
+        systolic: toNum(sessionData.preDialysisBP.systolic),
+        diastolic: toNum(sessionData.preDialysisBP.diastolic),
       },
       midDialysisBP: {
-        systolic: Number(sessionData.midDialysisBP.systolic),
-        diastolic: Number(sessionData.midDialysisBP.diastolic),
+        systolic: toNum(sessionData.midDialysisBP.systolic),
+        diastolic: toNum(sessionData.midDialysisBP.diastolic),
       },
-      preDialysisBP: {
-        systolic: Number(sessionData.preDialysisBP.systolic),
-        diastolic: Number(sessionData.preDialysisBP.diastolic),
+      postDialysisBP: {
+        systolic: toNum(sessionData.postDialysisBP.systolic),
+        diastolic: toNum(sessionData.postDialysisBP.diastolic),
       },
     };
 
-    addSession(newSession);
+    if (isEditing) {
+      updateSession({ ...data, id: selectedSessionId }, selectedSessionId);
+    } else {
+      addSession(data);
+    }
     navigation.goBack();
   }
 
-  function updateSessionHandler() {
-    if (!validateInput()) return;
-    const updatedSessionData = {
-      date: getFormattedDate(sessionData.date),
-      startTime: sessionData.startTime.toString(),
-      endTime: sessionData.endTime.toString(),
-      weightBefore: Number(sessionData.weightBefore),
-      weightAfter: Number(sessionData.weightAfter),
-      notes: sessionData.notes,
-      id: selectedSessionId,
-      postDialysisBP: {
-        systolic: Number(sessionData.postDialysisBP.systolic),
-        diastolic: Number(sessionData.postDialysisBP.diastolic),
-      },
-      midDialysisBP: {
-        systolic: Number(sessionData.midDialysisBP.systolic),
-        diastolic: Number(sessionData.midDialysisBP.diastolic),
-      },
-      preDialysisBP: {
-        systolic: Number(sessionData.preDialysisBP.systolic),
-        diastolic: Number(sessionData.preDialysisBP.diastolic),
-      },
-    };
-
-    updateSession(updatedSessionData, selectedSessionId);
-    navigation.goBack();
-  }
-
-  function deleteSessionHandler() {
-    deleteSession(selectedSessionId);
-    navigation.goBack();
-  }
-
-  function cancelHandler() {
-    navigation.goBack();
-  }
+  const bpField = (
+    label: string,
+    systolic: string,
+    diastolic: string,
+    onChange: (bp: { systolic: string; diastolic: string }) => void
+  ) => (
+    <View style={s.section}>
+      <Text style={s.label}>{label}</Text>
+      <View style={s.bpRow}>
+        <TextInput
+          style={s.bpInput}
+          value={systolic}
+          placeholder="120"
+          placeholderTextColor="#bbb"
+          keyboardType="numeric"
+          onChangeText={(t) => onChange({ systolic: t, diastolic })}
+        />
+        <Text style={s.bpSlash}>/</Text>
+        <TextInput
+          style={s.bpInput}
+          value={diastolic}
+          placeholder="80"
+          placeholderTextColor="#bbb"
+          keyboardType="numeric"
+          onChangeText={(t) => onChange({ systolic, diastolic: t })}
+        />
+      </View>
+    </View>
+  );
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: GlobalColors.primary300 }}
+      style={{ flex: 1, backgroundColor: "#f5f5f5" }}
       behavior="padding"
       keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
     >
-      <ScrollView style={styles.rootContainer}>
-        <View style={styles.inputContainer}>
-          <View>
-            <View style={styles.dateTime}>
-              <Text style={styles.labelText}>Date</Text>
-
-              {Platform.OS === "ios" ? (
-                <DateTimePicker
-                  value={sessionData.date}
-                  mode="date"
-                  display="default"
-                  onChange={(e, selectedDate) => {
-                    setShowDatePicker(false);
-                    if (selectedDate)
-                      setSessionData((prev) => ({
-                        ...prev,
-                        date: selectedDate,
-                      }));
-                  }}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    onPress={() => setShowDatePicker(true)}
-                    style={styles.androidDateTime}
-                  >
-                    <Text>{getFormattedDate(sessionData.date)}</Text>
-                  </TouchableOpacity>
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={sessionData.date}
-                      mode="date"
-                      display="calendar"
-                      onChange={(e, selectedDate) => {
-                        setShowDatePicker(false);
-                        if (selectedDate)
-                          setSessionData((prev) => ({
-                            ...prev,
-                            date: selectedDate,
-                          }));
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </View>
-            <View style={styles.dateTime}>
-              <Text style={styles.labelText}>Start Time</Text>
-
-              {Platform.OS === "ios" ? (
-                <DateTimePicker
-                  value={sessionData.startTime}
-                  mode="time"
-                  is24Hour={true}
-                  display="default"
-                  onChange={(e, selectedTime) => {
-                    setShowStartTimePicker(false);
-                    if (selectedTime)
-                      setSessionData((prev) => ({
-                        ...prev,
-                        startTime: selectedTime,
-                      }));
-                  }}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    onPress={() => setShowStartTimePicker(true)}
-                    style={styles.androidDateTime}
-                  >
-                    <Text>
-                      {getFormattedTime(sessionData.startTime.toISOString())}
-                    </Text>
-                  </TouchableOpacity>
-                  {showStartTimePicker && (
-                    <DateTimePicker
-                      value={sessionData.startTime}
-                      mode="time"
-                      is24Hour={true}
-                      display="default"
-                      onChange={(e, selectedTime) => {
-                        setShowStartTimePicker(false);
-                        if (selectedTime)
-                          setSessionData((prev) => ({
-                            ...prev,
-                            startTime: selectedTime,
-                          }));
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </View>
-            <View style={styles.dateTime}>
-              <Text style={styles.labelText}>End Time</Text>
-
-              {Platform.OS === "ios" ? (
-                <DateTimePicker
-                  value={sessionData.endTime}
-                  mode="time"
-                  is24Hour={true}
-                  display="default"
-                  onChange={(e, selectedTime) => {
-                    setShowEndTimePicker(false);
-                    if (selectedTime)
-                      setSessionData((prev) => ({
-                        ...prev,
-                        endTime: selectedTime,
-                      }));
-                  }}
-                />
-              ) : (
-                <>
-                  <TouchableOpacity
-                    style={styles.androidDateTime}
-                    onPress={() => setShowEndTimePicker(true)}
-                  >
-                    <Text>
-                      {getFormattedTime(sessionData.endTime.toISOString())}
-                    </Text>
-                  </TouchableOpacity>
-                  {showEndTimePicker && (
-                    <DateTimePicker
-                      value={sessionData.endTime}
-                      mode="time"
-                      is24Hour={true}
-                      display="default"
-                      onChange={(e, selectedTime) => {
-                        setShowEndTimePicker(false);
-                        if (selectedTime)
-                          setSessionData((prev) => ({
-                            ...prev,
-                            endTime: selectedTime,
-                          }));
-                      }}
-                    />
-                  )}
-                </>
-              )}
-            </View>
-          </View>
-          <View>
-            <Text style={styles.labelText}>Давление до диализа</Text>
-            <View style={styles.bpContainer}>
-              <BPStepper
-                label="Систола"
-                value={sessionData.preDialysisBP.systolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    preDialysisBP: { ...prev.preDialysisBP, systolic: text },
-                  }))
-                }
-              />
-              <BPStepper
-                label="Диастола"
-                value={sessionData.preDialysisBP.diastolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    preDialysisBP: { ...prev.preDialysisBP, diastolic: text },
-                  }))
-                }
-              />
-            </View>
-          </View>
-          <View>
-            <Text style={styles.labelText}>Давление через 2 часа</Text>
-            <View style={styles.bpContainer}>
-              <BPStepper
-                label="Систола"
-                value={sessionData.midDialysisBP.systolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    midDialysisBP: { ...prev.midDialysisBP, systolic: text },
-                  }))
-                }
-              />
-              <BPStepper
-                label="Диастола"
-                value={sessionData.midDialysisBP.diastolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    midDialysisBP: { ...prev.midDialysisBP, diastolic: text },
-                  }))
-                }
-              />
-            </View>
-          </View>
-          <View>
-            <Text style={styles.labelText}>Давление после диализа</Text>
-            <View style={styles.bpContainer}>
-              <BPStepper
-                label="Систола"
-                value={sessionData.postDialysisBP.systolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    postDialysisBP: { ...prev.postDialysisBP, systolic: text },
-                  }))
-                }
-              />
-              <BPStepper
-                label="Диастола"
-                value={sessionData.postDialysisBP.diastolic}
-                onChange={(text) =>
-                  setSessionData((prev) => ({
-                    ...prev,
-                    postDialysisBP: { ...prev.postDialysisBP, diastolic: text },
-                  }))
-                }
-              />
-            </View>
+      <ScrollView style={s.scroll} keyboardShouldPersistTaps="handled">
+        <View style={s.card}>
+          <View style={s.dateTimeRow}>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={s.dateBtn}
+            >
+              <Text style={s.dateBtnText}>
+                {getFormattedDate(sessionData.date)}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowStartTimePicker(true)}
+              style={s.timeBtn}
+            >
+              <Text style={s.timeBtnText}>
+                {getFormattedTime(sessionData.startTime.toISOString())}
+              </Text>
+            </TouchableOpacity>
+            <Text style={s.timeDash}>–</Text>
+            <TouchableOpacity
+              onPress={() => setShowEndTimePicker(true)}
+              style={s.timeBtn}
+            >
+              <Text style={s.timeBtnText}>
+                {getFormattedTime(sessionData.endTime.toISOString())}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <View>
-            <WeightInput
-              label="Pre Dialysis Weight (in kg)"
-              value={sessionData.weightBefore}
-              onChange={(text) =>
-                setSessionData((prev) => ({ ...prev, weightBefore: text }))
-              }
+          {showDatePicker && (
+            <DateTimePicker
+              value={sessionData.date}
+              mode="date"
+              display="calendar"
+              onChange={(e, d) => {
+                setShowDatePicker(false);
+                if (d) setSessionData((p) => ({ ...p, date: d }));
+              }}
             />
-            <WeightInput
-              label="Post Dialysis Weight (in kg)"
-              value={sessionData.weightAfter}
-              onChange={(text) =>
-                setSessionData((prev) => ({ ...prev, weightAfter: text }))
-              }
+          )}
+          {showStartTimePicker && (
+            <DateTimePicker
+              value={sessionData.startTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(e, t) => {
+                setShowStartTimePicker(false);
+                if (t) setSessionData((p) => ({ ...p, startTime: t }));
+              }}
             />
-            <Text style={styles.labelText}>Notes</Text>
+          )}
+          {showEndTimePicker && (
+            <DateTimePicker
+              value={sessionData.endTime}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(e, t) => {
+                setShowEndTimePicker(false);
+                if (t) setSessionData((p) => ({ ...p, endTime: t }));
+              }}
+            />
+          )}
+
+          <WeightInput
+            label="Вес до (кг)"
+            value={sessionData.weightBefore}
+            onChange={(t) =>
+              setSessionData((p) => ({ ...p, weightBefore: t }))
+            }
+            centerValue={prevWeightBefore}
+            rangePadding={3}
+          />
+
+          {bpField(
+            "Давление до",
+            sessionData.preDialysisBP.systolic,
+            sessionData.preDialysisBP.diastolic,
+            (bp) => setSessionData((p) => ({ ...p, preDialysisBP: bp }))
+          )}
+
+          {bpField(
+            "Давление 2 ч",
+            sessionData.midDialysisBP.systolic,
+            sessionData.midDialysisBP.diastolic,
+            (bp) => setSessionData((p) => ({ ...p, midDialysisBP: bp }))
+          )}
+
+          {bpField(
+            "Давление после",
+            sessionData.postDialysisBP.systolic,
+            sessionData.postDialysisBP.diastolic,
+            (bp) => setSessionData((p) => ({ ...p, postDialysisBP: bp }))
+          )}
+
+          <WeightInput
+            label="Вес после (кг)"
+            value={sessionData.weightAfter}
+            onChange={(t) =>
+              setSessionData((p) => ({ ...p, weightAfter: t }))
+            }
+            centerValue={dryWeightNum > 0 ? dryWeightNum : prevWeightBefore}
+            rangePadding={2}
+          />
+
+          <WeightInput
+            label="Сухой вес (кг)"
+            value={sessionData.dryWeight}
+            onChange={(t) =>
+              setSessionData((p) => ({ ...p, dryWeight: t }))
+            }
+            centerValue={dryWeightNum > 0 ? dryWeightNum : prevWeightBefore}
+            rangePadding={3}
+          />
+          {lastSession && !isEditing && lastSession.dryWeight > 0 && (
+            <Text style={s.hint}>
+              Предыдущий: {lastSession.dryWeight} кг
+            </Text>
+          )}
+
+          <View style={s.section}>
+            <Text style={s.label}>Комментарий</Text>
             <TextInput
-              style={[styles.textInput, styles.notesInput]}
-              placeholder="Enter Notes"
+              style={s.notesInput}
+              placeholder="Заметки"
               multiline={true}
-              numberOfLines={4}
+              numberOfLines={3}
               value={sessionData.notes}
-              placeholderTextColor="gray"
-              onChangeText={(enteredText) =>
-                setSessionData((prev) => ({ ...prev, notes: enteredText }))
+              placeholderTextColor="#aaa"
+              onChangeText={(t) =>
+                setSessionData((p) => ({ ...p, notes: t }))
               }
             />
           </View>
 
-          <View style={styles.mainButtonContainer}>
-            <Button
-              text={isEditing ? "Save" : "Add"}
-              onPress={isEditing ? updateSessionHandler : addSessionHandler}
-              style={styles.button}
-            />
+          <View style={s.buttons}>
+            <TouchableOpacity style={s.saveBtn} onPress={saveHandler}>
+              <Text style={s.saveBtnText}>
+                {isEditing ? "Сохранить" : "Добавить"}
+              </Text>
+            </TouchableOpacity>
             {isEditing && (
-              <Button
-                text="Delete"
-                onPress={deleteSessionHandler}
-                style={styles.button}
-              />
+              <TouchableOpacity
+                style={s.deleteBtn}
+                onPress={() => {
+                  deleteSession(selectedSessionId);
+                  navigation.goBack();
+                }}
+              >
+                <Text style={s.deleteBtnText}>Удалить</Text>
+              </TouchableOpacity>
             )}
-
-            <View style={styles.mainButtonContainer}>
-              <Button
-                text="Cancel"
-                onPress={cancelHandler}
-                style={styles.button}
-              />
-            </View>
+            <TouchableOpacity
+              style={s.cancelBtn}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={s.cancelBtnText}>Отмена</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -518,67 +320,142 @@ const ManageSession = ({ navigation, route }) => {
 
 export default ManageSession;
 
-const styles = StyleSheet.create({
-  rootContainer: {
+const s = StyleSheet.create({
+  scroll: {
     flex: 1,
-    backgroundColor: GlobalColors.primary300,
-    paddingBottom: 30,
+    backgroundColor: "#f5f5f5",
   },
-  inputContainer: {
+  card: {
+    margin: 16,
     padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  labelText: {
-    fontSize: 15,
-    fontWeight: 600,
-  },
-  textInput: {
-    padding: 15,
-    width: "100%",
-    marginTop: 10,
-    borderRadius: 10,
-    backgroundColor: GlobalColors.primary100,
-    marginBottom: 10,
-    textAlignVertical: "top",
-    textAlign: "left",
-  },
-  dateTime: {
+  dateTimeRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
   },
-
-  notesInput: {
-    height: 100,
+  dateBtn: {
+    backgroundColor: "#e8f0fe",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
   },
-
-  textInput2: {
-    width: 100,
+  dateBtnText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#2a6cb8",
+  },
+  timeBtn: {
+    backgroundColor: "#e8f0fe",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  timeBtnText: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#2a6cb8",
+  },
+  timeDash: {
+    fontSize: 18,
+    color: "#999",
+  },
+  section: {
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 6,
+  },
+  bpRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  bpInput: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#f8f8f8",
+    fontSize: 24,
+    fontWeight: "600",
     textAlign: "center",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
   },
-  bpContainer: {
+  bpSlash: {
+    fontSize: 28,
+    fontWeight: "600",
+    color: "#999",
+  },
+  notesInput: {
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: "#f8f8f8",
+    fontSize: 18,
+    height: 80,
+    textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  hint: {
+    fontSize: 14,
+    color: "#888",
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  buttons: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginTop: 10,
-  },
-  bpReadingContainer: {
-    alignItems: "center",
-  },
-  buttonsContainer: {
+    marginTop: 20,
     gap: 10,
   },
-  mainButtonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
+  saveBtn: {
+    backgroundColor: "#4a90d9",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    flex: 1,
+    alignItems: "center",
   },
-  button: {
-    width: 100,
-    height: 40,
-    borderRadius: 20,
+  saveBtnText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
   },
-
-  androidDateTime: {
-    backgroundColor: "#eca5a5",
-    borderRadius: 5,
-    padding: 6,
+  deleteBtn: {
+    backgroundColor: "#e74c3c",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  deleteBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  cancelBtn: {
+    backgroundColor: "#eee",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  cancelBtnText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

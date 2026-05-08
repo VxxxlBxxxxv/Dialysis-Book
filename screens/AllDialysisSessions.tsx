@@ -37,7 +37,7 @@ const AllDialysisSessions = () => {
   return sessions.length > 0 ? (
     <Sessions sessions={sessions} />
   ) : (
-    <Info info="No sessions added yet" />
+    <Info info="Сеансов пока нет" />
   );
 };
 

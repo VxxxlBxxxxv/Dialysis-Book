@@ -1,39 +1,39 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import Slider from "@react-native-community/slider";
-import GlobalColors from "../constants/Colors";
 
 interface WeightInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  centerValue?: number;
+  rangePadding?: number;
 }
 
-const DEFAULT_MIN = 45;
-const DEFAULT_MAX = 55;
 const STEP = 0.1;
-const RANGE_PADDING = 5;
 
 export default function WeightInput({
   label,
   value,
   onChange,
+  centerValue = 50,
+  rangePadding = 3,
 }: WeightInputProps) {
-  const [rangeMin, setRangeMin] = useState(DEFAULT_MIN);
-  const [rangeMax, setRangeMax] = useState(DEFAULT_MAX);
+  const [rangeMin, setRangeMin] = useState(centerValue - rangePadding);
+  const [rangeMax, setRangeMax] = useState(centerValue + rangePadding);
 
-  const numericValue = value !== "" ? parseFloat(value) : 0;
+  useEffect(() => {
+    if (centerValue > 0) {
+      setRangeMin(centerValue - rangePadding);
+      setRangeMax(centerValue + rangePadding);
+    }
+  }, [centerValue, rangePadding]);
 
-  const adaptRange = useCallback((val: number) => {
-    const center = Math.round(val);
-    setRangeMin(center - RANGE_PADDING);
-    setRangeMax(center + RANGE_PADDING);
-  }, []);
+  const numericValue = value !== "" ? parseFloat(value) : centerValue;
 
   const handleSliderChange = useCallback(
     (sliderValue: number) => {
-      const formatted = sliderValue.toFixed(1);
-      onChange(formatted);
+      onChange(sliderValue.toFixed(1));
     },
     [onChange]
   );
@@ -41,61 +41,38 @@ export default function WeightInput({
   const handleManualInput = useCallback(
     (text: string) => {
       onChange(text);
-      const num = parseFloat(text);
-      if (
-        !isNaN(num) &&
-        text.length > 0 &&
-        text.indexOf(".") !== text.length - 1
-      ) {
-        if (num < rangeMin || num > rangeMax) {
-          adaptRange(num);
-        }
-      }
     },
-    [onChange, rangeMin, rangeMax, adaptRange]
+    [onChange]
   );
-
-  const handleEndEditing = useCallback(() => {
-    const num = parseFloat(value);
-    if (!isNaN(num) && value.length > 0) {
-      const clamped = Math.max(rangeMin, Math.min(rangeMax, num));
-      if (clamped !== num) {
-        adaptRange(num);
-      }
-    }
-  }, [value, rangeMin, rangeMax, adaptRange]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-
-      <View style={styles.sliderRow}>
-        <Text style={styles.rangeLabel}>{rangeMin.toFixed(0)}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={rangeMin}
-          maximumValue={rangeMax}
-          step={STEP}
-          value={isNaN(numericValue) ? rangeMin : numericValue}
-          onValueChange={handleSliderChange}
-          minimumTrackTintColor={GlobalColors.primary600}
-          maximumTrackTintColor={GlobalColors.primary200}
-          thumbTintColor={GlobalColors.primary700}
-        />
-        <Text style={styles.rangeLabel}>{rangeMax.toFixed(0)}</Text>
-      </View>
-
-      <View style={styles.valueRow}>
+      <View style={styles.row}>
         <TextInput
           style={styles.input}
           value={value}
           onChangeText={handleManualInput}
-          onEndEditing={handleEndEditing}
           keyboardType="numeric"
-          placeholder="Введите вес"
-          placeholderTextColor="gray"
+          placeholder={centerValue.toFixed(1)}
+          placeholderTextColor="#bbb"
         />
         <Text style={styles.unit}>кг</Text>
+        <View style={styles.sliderWrap}>
+          <Text style={styles.rangeLabel}>{rangeMin.toFixed(0)}</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={rangeMin}
+            maximumValue={rangeMax}
+            step={STEP}
+            value={numericValue}
+            onValueChange={handleSliderChange}
+            minimumTrackTintColor="#4a90d9"
+            maximumTrackTintColor="#ddd"
+            thumbTintColor="#2a6cb8"
+          />
+          <Text style={styles.rangeLabel}>{rangeMax.toFixed(0)}</Text>
+        </View>
       </View>
     </View>
   );
@@ -103,44 +80,47 @@ export default function WeightInput({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 8,
+    marginBottom: 8,
   },
   label: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  sliderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  slider: {
-    flex: 1,
-    height: 40,
-  },
-  rangeLabel: {
-    fontSize: 12,
-    color: GlobalColors.primary700,
-    width: 28,
-    textAlign: "center",
-  },
-  valueRow: {
+  row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   input: {
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: GlobalColors.primary100,
-    fontSize: 16,
-    fontWeight: "500",
-    width: 100,
+    width: 90,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    fontSize: 22,
+    fontWeight: "600",
     textAlign: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   unit: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 16,
+    color: "#888",
+  },
+  sliderWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  slider: {
+    flex: 1,
+    height: 44,
+  },
+  rangeLabel: {
+    fontSize: 13,
+    color: "#999",
+    width: 24,
+    textAlign: "center",
   },
 });

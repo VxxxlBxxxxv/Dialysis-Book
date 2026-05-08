@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import GlobalColors from "../constants/Colors";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types";
@@ -14,6 +13,7 @@ function Session({
   endTime,
   weightBefore,
   weightAfter,
+  dryWeight,
   notes,
   id,
   preDialysisBP,
@@ -22,76 +22,80 @@ function Session({
 }) {
   const navigation = useNavigation<NavigationProp>();
 
-  function handlePress(id) {
-    navigation.navigate("Manage Session", { selectedSession: id });
-  }
-
-  const fluidRemoved = (weightBefore - weightAfter).toFixed(1);
-
-  const formattedStartTime = getFormattedTime(startTime);
-  const formattedendTime = getFormattedTime(endTime);
+  const fluidRemoved =
+    weightBefore && weightAfter
+      ? (weightBefore - weightAfter).toFixed(1)
+      : null;
 
   return (
     <Pressable
-      onPress={() => handlePress(id)}
-      style={({ pressed }) => [styles.rootContainer, pressed && styles.pressed]}
+      onPress={() =>
+        navigation.navigate("Manage Session", { selectedSession: id })
+      }
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.title}>
-        <Text style={styles.titleText}>Session {id}</Text>
+      <View style={styles.header}>
+        <Text style={styles.dateText}>{date}</Text>
+        <Text style={styles.timeText}>
+          {getFormattedTime(startTime)} – {getFormattedTime(endTime)}
+        </Text>
       </View>
 
-
-      <View style={styles.container}>
-        <View >
+      <View style={styles.body}>
+        {weightBefore > 0 && (
           <View style={styles.row}>
-            <Ionicons name="calendar" size={16} color="#DB3A3A" />
-            <Text>{date}</Text>
-          </View>
-          <View style={styles.row}>
-            <Ionicons name="scale-outline" size={16} color="#DB3A3A" />
-            <Text >
-              {weightBefore} kg ➜ {weightAfter} kg
+            <Ionicons name="scale-outline" size={20} color="#4a90d9" />
+            <Text style={styles.valueText}>
+              {weightBefore} кг → {weightAfter} кг
             </Text>
+            {fluidRemoved && (
+              <Text style={styles.fluidText}>−{fluidRemoved} кг</Text>
+            )}
           </View>
+        )}
 
+        {dryWeight > 0 && (
           <View style={styles.row}>
-            <Ionicons name="analytics" size={16} color="#DB3A3A" />
-            <Text >
+            <Ionicons name="fitness-outline" size={20} color="#4a90d9" />
+            <Text style={styles.valueText}>Сухой вес: {dryWeight} кг</Text>
+          </View>
+        )}
+
+        {preDialysisBP?.systolic > 0 && (
+          <View style={styles.row}>
+            <Ionicons name="heart-outline" size={20} color="#e74c3c" />
+            <Text style={styles.valueText}>
               До: {preDialysisBP.systolic}/{preDialysisBP.diastolic}
             </Text>
           </View>
-        </View>
-        <View style={styles.tempContainer}>
+        )}
+
+        {midDialysisBP?.systolic > 0 && (
           <View style={styles.row}>
-            <Ionicons name="time-outline" size={16} color="#DB3A3A" />
-            <Text >
-              {formattedStartTime} – {formattedendTime}
+            <Ionicons name="heart-half-outline" size={20} color="#e74c3c" />
+            <Text style={styles.valueText}>
+              2ч: {midDialysisBP.systolic}/{midDialysisBP.diastolic}
             </Text>
           </View>
-          <View style={[styles.row, { marginRight: "5%" }]}>
-            <Ionicons name="water" size={16} color="lightblue" />
-            <Text>{fluidRemoved} kg removed</Text>
-          </View>
-          <View style={[styles.row, { marginRight: "3%" }]}>
-            <Ionicons name="analytics" size={16} color="#DB3A3A" />
-            <Text >
+        )}
+
+        {postDialysisBP?.systolic > 0 && (
+          <View style={styles.row}>
+            <Ionicons name="heart-discharge-outline" size={20} color="#e74c3c" />
+            <Text style={styles.valueText}>
               После: {postDialysisBP.systolic}/{postDialysisBP.diastolic}
             </Text>
           </View>
-          {midDialysisBP && (midDialysisBP.systolic || midDialysisBP.diastolic) ? (
-            <View style={styles.row}>
-              <Ionicons name="analytics" size={16} color="#DB3A3A" />
-              <Text>
-                2ч: {midDialysisBP.systolic}/{midDialysisBP.diastolic}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+        )}
       </View>
 
       {notes ? (
-        <View style={styles.notesContainer}>
-          <Ionicons name="document-text-outline" size={16} color="#DB3A3A" />
+        <View style={styles.notesRow}>
+          <Ionicons
+            name="document-text-outline"
+            size={18}
+            color="#888"
+          />
           <Text style={styles.notesText}>{notes}</Text>
         </View>
       ) : null}
@@ -102,56 +106,68 @@ function Session({
 export default Session;
 
 const styles = StyleSheet.create({
-
-  
-  rootContainer: {
-    padding: 20,
-    backgroundColor: GlobalColors.primary200,
-    marginTop: 15,
-    marginBottom: 5,
-    marginHorizontal: 20,
-    borderRadius: 6,
-    shadowColor: "red",
-    shadowOffset: { height: 1, width: 1 },
-    shadowRadius: 10,
-    shadowOpacity: 0.4,
-    elevation: 1,
-  },
-
-  container:{
-    flexDirection:"row",
-    justifyContent:"space-between",
-    alignItems:"center"
-  },
-
-  title: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  titleText: {
-    fontWeight: "700",
+  card: {
+    backgroundColor: "#fff",
+    marginHorizontal: 16,
+    marginVertical: 6,
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
   pressed: {
-    opacity: 0.5,
+    opacity: 0.7,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+  },
+  timeText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  body: {
+    gap: 6,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
-    gap:8
+    gap: 8,
   },
-
-
-  notesContainer: {
+  valueText: {
+    fontSize: 17,
+    color: "#444",
+    fontWeight: "500",
+  },
+  fluidText: {
+    fontSize: 15,
+    color: "#4a90d9",
+    fontWeight: "600",
+    marginLeft: 4,
+  },
+  notesRow: {
     flexDirection: "row",
     alignItems: "flex-start",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopColor: "#eee",
+    borderTopWidth: 1,
+    gap: 6,
   },
   notesText: {
-    marginLeft: 6,
-    fontSize: 13,
+    fontSize: 15,
+    color: "#666",
     fontStyle: "italic",
-    color: "#333",
     flexShrink: 1,
   },
 });

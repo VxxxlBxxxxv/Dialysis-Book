@@ -19,10 +19,12 @@ const Sessions = ({ sessions }) => {
             endTime={item.endTime}
             weightAfter={item.weightAfter}
             weightBefore={item.weightBefore}
+            dryWeight={item.dryWeight}
             notes={item.notes}
             id={item.id}
             preDialysisBP={item.preDialysisBP}
-             postDialysisBP={item.postDialysisBP}
+            midDialysisBP={item.midDialysisBP}
+            postDialysisBP={item.postDialysisBP}
           />
         )}
       />
