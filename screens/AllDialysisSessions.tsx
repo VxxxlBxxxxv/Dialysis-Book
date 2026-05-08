@@ -1,8 +1,8 @@
 import { useContext, useLayoutEffect } from "react";
+import { KeyboardAvoidingView, Platform } from "react-native";
 
 import { SessionsContext } from "../store/session-context";
 import Sessions from "../components/Sessions";
-import Info from "../components/Info";
 import Button from "../components/HeaderButton";
 import { useNavigation } from "@react-navigation/native";
 import { generateAndShareMarkdown } from "../util/markdownGeneration";
@@ -14,16 +14,7 @@ const AllDialysisSessions = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <Button
-          name="add"
-          size={18}
-          color="white"
-          onPress={() => navigation.navigate("Manage Session")}
-        />
-      ),
-
-        headerLeft: () => (
+      headerLeft: () => (
         <Button
           name="share"
           size={18}
@@ -34,10 +25,13 @@ const AllDialysisSessions = () => {
     });
   }, [navigation, sessions]);
 
-  return sessions.length > 0 ? (
-    <Sessions sessions={sessions} />
-  ) : (
-    <Info info="Сеансов пока нет" />
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <Sessions sessions={sessions} />
+    </KeyboardAvoidingView>
   );
 };
 
