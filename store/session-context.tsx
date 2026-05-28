@@ -5,19 +5,38 @@ import { DialysisSession } from "../types";
 
 interface SessionsContextType {
   sessions: DialysisSession[];
-  addSession: (session: DialysisSession) => void;
+  addSession: (session: Omit<DialysisSession, "id">) => string;
   deleteSession: (id: string) => void;
   updateSession: (session: DialysisSession, id: string) => void;
 }
 
 export const SessionsContext = createContext<SessionsContextType>({
   sessions: [],
-  addSession: () => {},
+  addSession: () => "",
   updateSession: () => {},
   deleteSession: () => {},
 });
 
 const STORAGE_KEY = "dialysis_sessions";
+
+function makeId(): string {
+  return `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+}
+
+// Гарантирует уникальный id у каждого сеанса. Прежний генератор брал
+// prevSessions[last].id+1 — а last это самый старый сеанс → коллизии id,
+// из-за которых тап по записи открывал чужую (F6). Чиним при загрузке.
+function ensureUniqueIds(sessions: DialysisSession[]): DialysisSession[] {
+  const seen = new Set<string>();
+  return sessions.map((session, index) => {
+    let id = session.id != null ? String(session.id) : "";
+    if (id === "" || seen.has(id)) {
+      id = `${makeId()}-${index}`;
+    }
+    seen.add(id);
+    return { ...session, id };
+  });
+}
 
 interface SessionsProviderProps {
   children: ReactNode;
@@ -32,7 +51,7 @@ export function SessionsContextProvider({ children }: SessionsProviderProps) {
       try {
         const storedData = await AsyncStorage.getItem(STORAGE_KEY);
         if (storedData) {
-          setSessionsState(JSON.parse(storedData));
+          setSessionsState(ensureUniqueIds(JSON.parse(storedData)));
         }
       } catch (error) {
         console.error("Failed to load sessions from storage:", error);
@@ -55,11 +74,13 @@ export function SessionsContextProvider({ children }: SessionsProviderProps) {
     saveSessions();
   }, [sessions]);
 
-  function addSession(sessionData: DialysisSession) {
+  function addSession(sessionData: Omit<DialysisSession, "id">): string {
+    const id = makeId();
     setSessionsState((prevSessions) => [
-      { id: sessions.length===0 ? 1: prevSessions[prevSessions.length-1].id+1, ...sessionData },
+      { ...sessionData, id },
       ...prevSessions,
     ]);
+    return id;
   }
 
   function updateSession(sessionData: DialysisSession, id: String) {

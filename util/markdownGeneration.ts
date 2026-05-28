@@ -2,6 +2,7 @@ import { Alert } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { DialysisSession } from "../types";
+import { formatKg, formatBP, fluidRemoved, NO_DATA } from "./format";
 
 const DAYS_OF_WEEK_RU = [
   "воскресенье",
@@ -50,10 +51,15 @@ function todayLocalIso(): string {
   return `${y}-${m}-${d}`;
 }
 
+function withBpUnit(bp: string): string {
+  return bp === NO_DATA ? NO_DATA : `${bp} мм рт.ст.`;
+}
+
 function formatSession(s: DialysisSession): string {
   const parts = parseDateParts(s.date)!;
   const dayOfWeek = getDayOfWeekRu(parts);
-  const ufKg = (Number(s.weightBefore) - Number(s.weightAfter)).toFixed(1);
+  const uf = fluidRemoved(s.weightBefore, s.weightAfter);
+  const ufKg = uf !== null ? `${uf.toFixed(1)} кг` : NO_DATA;
   const notes = (s.notes ?? "").trim();
 
   return `## ${s.date} (${dayOfWeek})
@@ -62,11 +68,11 @@ function formatSession(s: DialysisSession): string {
 |----------|----------|
 | Начало | ${s.startTime} |
 | Конец | ${s.endTime} |
-| Вес до | ${s.weightBefore} кг |
-| Вес после | ${s.weightAfter} кг |
-| УФ (удалено) | ${ufKg} кг |
-| АД до | ${s.preDialysisBP.systolic}/${s.preDialysisBP.diastolic} мм рт.ст. |
-| АД после | ${s.postDialysisBP.systolic}/${s.postDialysisBP.diastolic} мм рт.ст. |
+| Вес до | ${formatKg(s.weightBefore)} |
+| Вес после | ${formatKg(s.weightAfter)} |
+| УФ (удалено) | ${ufKg} |
+| АД до | ${withBpUnit(formatBP(s.preDialysisBP))} |
+| АД после | ${withBpUnit(formatBP(s.postDialysisBP))} |
 
 **Примечания:** ${notes.length > 0 ? notes : "—"}
 `;

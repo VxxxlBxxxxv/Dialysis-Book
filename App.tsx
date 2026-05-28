@@ -1,18 +1,19 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AllDialysisSessions from "./screens/AllDialysisSessions";
-import ManageSession from "./screens/ManageSession";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
+import { View, StyleSheet } from "react-native";
 
 import { SessionsContextProvider } from "./store/session-context";
+import BuildBadge from "./components/BuildBadge";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <>
-      <SessionsContextProvider>
-        <StatusBar style="dark" />
+    <SessionsContextProvider>
+      <StatusBar style="dark" />
+      <View style={styles.root}>
         <NavigationContainer>
           <Stack.Navigator
             screenOptions={{
@@ -26,14 +27,16 @@ export default function App() {
               component={AllDialysisSessions}
               options={{ title: "Дневник диализа" }}
             />
-            <Stack.Screen
-              name="Manage Session"
-              component={ManageSession}
-              options={{ presentation: "modal" }}
-            />
           </Stack.Navigator>
         </NavigationContainer>
-      </SessionsContextProvider>
-    </>
+        <BuildBadge />
+      </View>
+    </SessionsContextProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});

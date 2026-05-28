@@ -1,5 +1,4 @@
 export type RootStackParamList = {
-  "Manage Session": { selectedSession?: string };
   "Dialysis Sessions": undefined;
 };
 
@@ -16,16 +15,21 @@ export interface ButtonProps {
   text: string;
 }
 
+export type BloodPressure = {
+  systolic: number | null;
+  diastolic: number | null;
+};
+
 export type DialysisSession = {
   id: string;
   date: string;
   startTime: string;
   endTime: string;
-  weightBefore: number;
-  weightAfter: number;
-  dryWeight: number;
+  weightBefore: number | null;
+  weightAfter: number | null;
+  dryWeight: number | null;
   notes?: string;
-  preDialysisBP: { systolic: number; diastolic: number };
-  midDialysisBP: { systolic: number; diastolic: number };
-  postDialysisBP: { systolic: number; diastolic: number };
+  preDialysisBP: BloodPressure;
+  midDialysisBP: BloodPressure;
+  postDialysisBP: BloodPressure;
 };

@@ -10,16 +10,23 @@ export function getDateMinusDays(date:Date,days:number){
     return new Date(date.getFullYear(),date.getMonth(),date.getDate()-days)
 }
 
+const WEEKDAYS_SHORT_RU = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+// День недели (Пн/Вт/…) из строки даты YYYY-MM-DD. Пустая строка при невалидной дате.
+export function getWeekdayShortRu(dateStr: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+  if (!match) return "";
+  const dt = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return WEEKDAYS_SHORT_RU[dt.getDay()];
+}
+
 export function getFormattedTime(time:string){
 
 const date = new Date(time);
-const hours = date.getHours();
+const hours = date.getHours().toString().padStart(2, '0');
 const minutes = date.getMinutes().toString().padStart(2, '0');
-const ampm = hours >= 12 ? 'pm' : 'am';
-const hour12 = hours % 12 || 12;
-const formattedTime = `${hour12}:${minutes} ${ampm}`;
 
-return formattedTime
+return `${hours}:${minutes}`;
 
 }
 

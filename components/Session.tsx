@@ -1,11 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types";
 import { Ionicons } from "@expo/vector-icons";
-import { getFormattedTime } from "../util/date";
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import { getFormattedTime, getWeekdayShortRu } from "../util/date";
+import { formatKg, formatBP, fluidRemoved, hasValue, NO_DATA } from "../util/format";
 
 function Session({
   date,
@@ -19,72 +15,68 @@ function Session({
   preDialysisBP,
   midDialysisBP,
   postDialysisBP,
+  onEdit,
 }) {
-  const navigation = useNavigation<NavigationProp>();
-
-  const fluidRemoved =
-    weightBefore && weightAfter
-      ? (weightBefore - weightAfter).toFixed(1)
-      : null;
+  const uf = fluidRemoved(weightBefore, weightAfter);
+  const weekday = getWeekdayShortRu(date);
+  const hasWeight = hasValue(weightBefore) || hasValue(weightAfter);
+  const preBP = formatBP(preDialysisBP);
+  const midBP = formatBP(midDialysisBP);
+  const postBP = formatBP(postDialysisBP);
 
   return (
     <Pressable
-      onPress={() =>
-        navigation.navigate("Manage Session", { selectedSession: id })
-      }
+      onPress={() => onEdit(id)}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={styles.header}>
-        <Text style={styles.dateText}>{date}</Text>
+        <Text style={styles.dateText}>
+          {date}
+          {weekday ? ` · ${weekday}` : ""}
+        </Text>
         <Text style={styles.timeText}>
           {getFormattedTime(startTime)} – {getFormattedTime(endTime)}
         </Text>
       </View>
 
       <View style={styles.body}>
-        {weightBefore > 0 && (
+        {hasWeight && (
           <View style={styles.row}>
             <Ionicons name="scale-outline" size={20} color="#4a90d9" />
             <Text style={styles.valueText}>
-              {weightBefore} кг → {weightAfter} кг
+              {formatKg(weightBefore)} → {formatKg(weightAfter)}
             </Text>
-            {fluidRemoved && (
-              <Text style={styles.fluidText}>−{fluidRemoved} кг</Text>
+            {uf !== null && (
+              <Text style={styles.fluidText}>−{uf.toFixed(1)} кг</Text>
             )}
           </View>
         )}
 
-        {dryWeight > 0 && (
+        {hasValue(dryWeight) && (
           <View style={styles.row}>
             <Ionicons name="fitness-outline" size={20} color="#4a90d9" />
-            <Text style={styles.valueText}>Сухой вес: {dryWeight} кг</Text>
+            <Text style={styles.valueText}>Сухой вес: {formatKg(dryWeight)}</Text>
           </View>
         )}
 
-        {preDialysisBP?.systolic > 0 && (
+        {preBP !== NO_DATA && (
           <View style={styles.row}>
             <Ionicons name="heart-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>
-              До: {preDialysisBP.systolic}/{preDialysisBP.diastolic}
-            </Text>
+            <Text style={styles.valueText}>До: {preBP}</Text>
           </View>
         )}
 
-        {midDialysisBP?.systolic > 0 && (
+        {midBP !== NO_DATA && (
           <View style={styles.row}>
             <Ionicons name="heart-half-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>
-              2ч: {midDialysisBP.systolic}/{midDialysisBP.diastolic}
-            </Text>
+            <Text style={styles.valueText}>2ч: {midBP}</Text>
           </View>
         )}
 
-        {postDialysisBP?.systolic > 0 && (
+        {postBP !== NO_DATA && (
           <View style={styles.row}>
-            <Ionicons name="heart-discharge-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>
-              После: {postDialysisBP.systolic}/{postDialysisBP.diastolic}
-            </Text>
+            <Ionicons name="heart" size={20} color="#e74c3c" />
+            <Text style={styles.valueText}>После: {postBP}</Text>
           </View>
         )}
       </View>
