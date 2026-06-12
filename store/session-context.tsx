@@ -8,6 +8,7 @@ interface SessionsContextType {
   addSession: (session: Omit<DialysisSession, "id">) => string;
   deleteSession: (id: string) => void;
   updateSession: (session: DialysisSession, id: string) => void;
+  replaceAllSessions: (sessions: DialysisSession[]) => void;
 }
 
 export const SessionsContext = createContext<SessionsContextType>({
@@ -15,6 +16,7 @@ export const SessionsContext = createContext<SessionsContextType>({
   addSession: () => "",
   updateSession: () => {},
   deleteSession: () => {},
+  replaceAllSessions: () => {},
 });
 
 const STORAGE_KEY = "dialysis_sessions";
@@ -103,11 +105,18 @@ export function SessionsContextProvider({ children }: SessionsProviderProps) {
     );
   }
 
+  // Полная замена списка (восстановление из резервной копии). Прогоняем через
+  // ensureUniqueIds на случай коллизий id между импортом и текущими данными.
+  function replaceAllSessions(next: DialysisSession[]) {
+    setSessionsState(ensureUniqueIds(next));
+  }
+
   const value: SessionsContextType = {
     sessions,
     addSession,
     deleteSession,
     updateSession,
+    replaceAllSessions,
   };
 
   return (

@@ -6,7 +6,7 @@ export interface HeaderButtonProps {
   name: string;
   size: number;
   color: string;
-  id: number;
+  id?: number;
   onPress: () => void;
 }
 
