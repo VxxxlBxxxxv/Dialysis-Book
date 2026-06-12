@@ -15,6 +15,8 @@ function Session({
   preDialysisBP,
   midDialysisBP,
   postDialysisBP,
+  pulse,
+  symptoms,
   onEdit,
 }) {
   const uf = fluidRemoved(weightBefore, weightAfter);
@@ -23,6 +25,7 @@ function Session({
   const preBP = formatBP(preDialysisBP);
   const midBP = formatBP(midDialysisBP);
   const postBP = formatBP(postDialysisBP);
+  const symptomList = Array.isArray(symptoms) ? symptoms : [];
 
   return (
     <Pressable
@@ -77,6 +80,20 @@ function Session({
           <View style={styles.row}>
             <Ionicons name="heart" size={20} color="#e74c3c" />
             <Text style={styles.valueText}>После: {postBP}</Text>
+          </View>
+        )}
+
+        {hasValue(pulse) && (
+          <View style={styles.row}>
+            <Ionicons name="pulse-outline" size={20} color="#e74c3c" />
+            <Text style={styles.valueText}>Пульс: {pulse} уд/мин</Text>
+          </View>
+        )}
+
+        {symptomList.length > 0 && (
+          <View style={styles.row}>
+            <Ionicons name="alert-circle-outline" size={20} color="#e67e22" />
+            <Text style={styles.symptomText}>{symptomList.join(", ")}</Text>
           </View>
         )}
       </View>
@@ -140,6 +157,12 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: "#444",
     fontWeight: "500",
+  },
+  symptomText: {
+    fontSize: 16,
+    color: "#e67e22",
+    fontWeight: "600",
+    flexShrink: 1,
   },
   fluidText: {
     fontSize: 15,

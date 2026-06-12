@@ -2,7 +2,7 @@ import { Alert } from "react-native";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { DialysisSession } from "../types";
-import { formatKg, formatBP, fluidRemoved, NO_DATA } from "./format";
+import { formatKg, formatBP, fluidRemoved, hasValue, NO_DATA } from "./format";
 
 const DAYS_OF_WEEK_RU = [
   "воскресенье",
@@ -61,6 +61,11 @@ function formatSession(s: DialysisSession): string {
   const uf = fluidRemoved(s.weightBefore, s.weightAfter);
   const ufKg = uf !== null ? `${uf.toFixed(1)} кг` : NO_DATA;
   const notes = (s.notes ?? "").trim();
+  const pulse = hasValue(s.pulse) ? `${s.pulse} уд/мин` : NO_DATA;
+  const symptoms =
+    Array.isArray(s.symptoms) && s.symptoms.length > 0
+      ? s.symptoms.join(", ")
+      : NO_DATA;
 
   return `## ${s.date} (${dayOfWeek})
 
@@ -73,7 +78,9 @@ function formatSession(s: DialysisSession): string {
 | УФ (удалено) | ${ufKg} |
 | АД до | ${withBpUnit(formatBP(s.preDialysisBP))} |
 | АД после | ${withBpUnit(formatBP(s.postDialysisBP))} |
+| ЧСС | ${pulse} |
 
+**Симптомы:** ${symptoms}
 **Примечания:** ${notes.length > 0 ? notes : "—"}
 `;
 }

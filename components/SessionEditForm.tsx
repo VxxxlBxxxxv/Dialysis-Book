@@ -3,6 +3,7 @@ import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-nativ
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { DialysisSession } from "../types";
+import { SYMPTOMS } from "../constants/symptoms";
 import { getFormattedDate, getFormattedTime } from "../util/date";
 import { parseBP, bpToString, hasValue } from "../util/format";
 import WeightInput from "./WeightInput";
@@ -33,7 +34,18 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
     preBP: bpToString(session.preDialysisBP),
     midBP: bpToString(session.midDialysisBP),
     postBP: bpToString(session.postDialysisBP),
+    pulse: hasValue(session.pulse) ? String(session.pulse) : "",
+    symptoms: session.symptoms ?? [],
   }));
+
+  function toggleSymptom(symptom: string) {
+    setData((p) => ({
+      ...p,
+      symptoms: p.symptoms.includes(symptom)
+        ? p.symptoms.filter((s) => s !== symptom)
+        : [...p.symptoms, symptom],
+    }));
+  }
 
   const toNum = (v: string) => (v !== "" ? Number(v) : null);
   const dryWeightNum = data.dryWeight !== "" ? parseFloat(data.dryWeight) : 0;
@@ -61,6 +73,8 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         preDialysisBP: parseBP(data.preBP),
         midDialysisBP: parseBP(data.midBP),
         postDialysisBP: parseBP(data.postBP),
+        pulse: toNum(data.pulse),
+        symptoms: data.symptoms,
       },
       session.id
     );
@@ -178,6 +192,45 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
       {bpField("Давление после", data.postBP, (t) =>
         setData((p) => ({ ...p, postBP: t }))
       )}
+
+      <View style={s.section}>
+        <Text style={s.label}>Пульс (уд/мин)</Text>
+        <TextInput
+          style={s.bpInput}
+          value={data.pulse}
+          placeholder="70"
+          placeholderTextColor="#bbb"
+          keyboardType="numeric"
+          onChangeText={(t) =>
+            setData((p) => ({ ...p, pulse: t.replace(/[^0-9]/g, "") }))
+          }
+        />
+      </View>
+
+      <View style={s.section}>
+        <Text style={s.label}>Симптомы</Text>
+        <View style={s.symptomWrap}>
+          {SYMPTOMS.map((symptom) => {
+            const active = data.symptoms.includes(symptom);
+            return (
+              <TouchableOpacity
+                key={symptom}
+                style={[s.symptomChip, active && s.symptomChipActive]}
+                onPress={() => toggleSymptom(symptom)}
+              >
+                <Text
+                  style={[
+                    s.symptomText,
+                    active && s.symptomTextActive,
+                  ]}
+                >
+                  {symptom}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
 
       <View style={s.weightWrap}>
         {deltaAfter !== null && (
@@ -332,6 +385,31 @@ const s = StyleSheet.create({
     textAlignVertical: "top",
     borderWidth: 1,
     borderColor: "#e0e0e0",
+  },
+  symptomWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  symptomChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: "#f8f8f8",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  symptomChipActive: {
+    backgroundColor: "#e74c3c",
+    borderColor: "#e74c3c",
+  },
+  symptomText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#555",
+  },
+  symptomTextActive: {
+    color: "#fff",
   },
   fluidHint: {
     fontSize: 15,
