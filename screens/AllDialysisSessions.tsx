@@ -7,6 +7,7 @@ import Button from "../components/HeaderButton";
 import { useNavigation } from "@react-navigation/native";
 import { generateAndShareMarkdown } from "../util/markdownGeneration";
 import { exportBackup, pickBackup, mergeSessions } from "../util/backup";
+import { toggleReminders, remindersEnabled } from "../util/reminders";
 
 const AllDialysisSessions = () => {
   const { sessions, replaceAllSessions } = useContext(SessionsContext);
@@ -25,10 +26,17 @@ const AllDialysisSessions = () => {
     );
   }
 
-  function openBackupMenu() {
-    Alert.alert("Резервная копия", "Выберите действие", [
+  async function openBackupMenu() {
+    const remOn = await remindersEnabled();
+    Alert.alert("Меню", "Выберите действие", [
       { text: "Сохранить копию", onPress: () => exportBackup(sessions) },
       { text: "Восстановить из копии", onPress: handleRestore },
+      {
+        text: remOn ? "Выключить напоминания" : "Включить напоминания (Пн/Ср/Пт)",
+        onPress: () => {
+          toggleReminders();
+        },
+      },
       { text: "Отмена", style: "cancel" },
     ]);
   }
