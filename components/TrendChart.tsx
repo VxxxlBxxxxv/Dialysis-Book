@@ -1,125 +1,178 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import Svg, {
+  Circle,
+  G,
+  Line,
+  Polyline,
+  Text as SvgText,
+} from "react-native-svg";
 import { DialysisSession } from "../types";
 import { hasValue } from "../util/format";
 
-const CHART_HEIGHT = 120;
-const COLUMN_WIDTH = 44;
-const BAR_WIDTH = 14;
+const OUTER_PAD = 14;
+const CHART_HEIGHT = 132;
+const PAD_LEFT = 34;
+const PAD_RIGHT = 10;
+const PAD_TOP = 12;
+const PAD_BOTTOM = 20;
 
-type Column = {
-  label: string; // дата (день)
-  before: number | null;
-  after: number | null;
+type Series = {
+  values: (number | null | undefined)[];
+  color: string;
+  legend: string;
 };
 
-// Один мини-график: столбики «до» (синий) и «после» по сеансам.
-// reference — пунктирная линия порога (напр. 180 для давления).
-function MiniBars({
-  columns,
-  unit,
+type Reference = { value: number; color: string };
+
+// Один компактный линейный график, вписанный в заданную ширину (без прокрутки).
+function LineChart({
+  width,
+  series,
+  labels,
   reference,
-  afterColor,
 }: {
-  columns: Column[];
-  unit: string;
-  reference?: number;
-  afterColor: string;
+  width: number;
+  series: Series[];
+  labels: string[];
+  reference?: Reference;
 }) {
-  const values = columns
-    .flatMap((c) => [c.before, c.after])
+  const all = series
+    .flatMap((s) => s.values)
     .filter((v): v is number => hasValue(v));
 
-  if (values.length === 0) {
+  if (all.length === 0) {
     return <Text style={s.empty}>Нет данных</Text>;
   }
 
-  // Диапазон с запасом, чтобы столбики не упирались в края.
-  const rawMin = Math.min(...values, reference ?? Infinity);
-  const rawMax = Math.max(...values, reference ?? -Infinity);
+  const refVal = reference?.value;
+  const rawMin = Math.min(...all, refVal ?? Infinity);
+  const rawMax = Math.max(...all, refVal ?? -Infinity);
   const pad = Math.max((rawMax - rawMin) * 0.15, 2);
   const min = Math.floor(rawMin - pad);
   const max = Math.ceil(rawMax + pad);
   const span = max - min || 1;
+  const mid = Math.round((min + max) / 2);
 
-  const toHeight = (v: number) => ((v - min) / span) * CHART_HEIGHT;
+  const plotW = width - PAD_LEFT - PAD_RIGHT;
+  const plotH = CHART_HEIGHT - PAD_TOP - PAD_BOTTOM;
+  const n = labels.length;
 
-  const refTop =
-    reference != null ? CHART_HEIGHT - toHeight(reference) : null;
+  const xAt = (i: number) =>
+    PAD_LEFT + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const yAt = (v: number) => PAD_TOP + (1 - (v - min) / span) * plotH;
+
+  const gridLines = [max, mid, min];
+
+  // Сколько подписей дат показать, чтобы не слипались (≈ каждые 60px).
+  const maxLabels = Math.max(2, Math.floor(plotW / 56));
+  const labelStep = Math.max(1, Math.ceil(n / maxLabels));
 
   return (
-    <View>
-      <View style={s.plotRow}>
-        {/* ось Y: подписи min/max */}
-        <View style={s.yAxis}>
-          <Text style={s.axisLabel}>{max}</Text>
-          <Text style={s.axisLabel}>{min}</Text>
-        </View>
+    <Svg width={width} height={CHART_HEIGHT}>
+      {/* горизонтальная сетка + подписи оси Y */}
+      {gridLines.map((g, i) => {
+        const y = yAt(g);
+        return (
+          <Line
+            key={`g${i}`}
+            x1={PAD_LEFT}
+            y1={y}
+            x2={PAD_LEFT + plotW}
+            y2={y}
+            stroke="#eef2f7"
+            strokeWidth={1}
+          />
+        );
+      })}
+      {gridLines.map((g, i) => (
+        <SvgText
+          key={`gl${i}`}
+          x={PAD_LEFT - 6}
+          y={yAt(g) + 4}
+          fontSize={10}
+          fill="#aaa"
+          textAnchor="end"
+        >
+          {g}
+        </SvgText>
+      ))}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={[s.plot, { height: CHART_HEIGHT }]}>
-            {refTop != null && (
-              <View style={[s.refLine, { top: refTop }]}>
-                <Text style={s.refLabel}>{reference}</Text>
-              </View>
+      {/* пороговая линия */}
+      {reference && reference.value >= min && reference.value <= max && (
+        <Line
+          x1={PAD_LEFT}
+          y1={yAt(reference.value)}
+          x2={PAD_LEFT + plotW}
+          y2={yAt(reference.value)}
+          stroke={reference.color}
+          strokeWidth={1}
+          strokeDasharray="4 4"
+        />
+      )}
+
+      {/* линии серий */}
+      {series.map((serie, si) => {
+        const pts = labels
+          .map((_, i) => ({ i, v: serie.values[i] }))
+          .filter((p) => hasValue(p.v)) as { i: number; v: number }[];
+        const polyline = pts.map((p) => `${xAt(p.i)},${yAt(p.v)}`).join(" ");
+        return (
+          <G key={`serie${si}`}>
+            {pts.length > 1 && (
+              <Polyline
+                points={polyline}
+                fill="none"
+                stroke={serie.color}
+                strokeWidth={2}
+              />
             )}
-            {columns.map((c, i) => (
-              <View key={i} style={[s.column, { width: COLUMN_WIDTH }]}>
-                <View style={s.bars}>
-                  {hasValue(c.before) && (
-                    <View
-                      style={[
-                        s.bar,
-                        {
-                          height: toHeight(c.before),
-                          width: BAR_WIDTH / 2 + 1,
-                          backgroundColor: "#9bbce0",
-                        },
-                      ]}
-                    />
-                  )}
-                  {hasValue(c.after) && (
-                    <View
-                      style={[
-                        s.bar,
-                        {
-                          height: toHeight(c.after),
-                          width: BAR_WIDTH / 2 + 1,
-                          backgroundColor: afterColor,
-                        },
-                      ]}
-                    />
-                  )}
-                </View>
-              </View>
+            {pts.map((p) => (
+              <Circle
+                key={`c${si}-${p.i}`}
+                cx={xAt(p.i)}
+                cy={yAt(p.v)}
+                r={3}
+                fill={serie.color}
+              />
             ))}
-          </View>
-        </ScrollView>
-      </View>
+          </G>
+        );
+      })}
 
-      {/* подписи дат под графиком */}
-      <View style={s.labelsRow}>
-        <View style={s.yAxisSpacer} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={s.row}>
-            {columns.map((c, i) => (
-              <Text key={i} style={[s.dateLabel, { width: COLUMN_WIDTH }]}>
-                {c.label}
-              </Text>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
+      {/* подписи дат по оси X */}
+      {labels.map((lab, i) =>
+        i % labelStep === 0 || i === n - 1 ? (
+          <SvgText
+            key={`x${i}`}
+            x={xAt(i)}
+            y={CHART_HEIGHT - 6}
+            fontSize={10}
+            fill="#999"
+            textAnchor="middle"
+          >
+            {lab}
+          </SvgText>
+        ) : null
+      )}
+    </Svg>
+  );
+}
 
-      <View style={s.legend}>
-        <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: "#9bbce0" }]} />
-          <Text style={s.legendText}>до</Text>
+function Legend({ items }: { items: { color: string; text: string }[] }) {
+  return (
+    <View style={s.legend}>
+      {items.map((it) => (
+        <View key={it.text} style={s.legendItem}>
+          <View style={[s.dot, { backgroundColor: it.color }]} />
+          <Text style={s.legendText}>{it.text}</Text>
         </View>
-        <View style={s.legendItem}>
-          <View style={[s.dot, { backgroundColor: afterColor }]} />
-          <Text style={s.legendText}>после ({unit})</Text>
-        </View>
-      </View>
+      ))}
     </View>
   );
 }
@@ -129,24 +182,14 @@ export default function TrendChart({
 }: {
   sessions: DialysisSession[];
 }) {
-  // По возрастанию даты, последние 14 сеансов.
+  const { width } = useWindowDimensions();
+  const chartWidth = width - OUTER_PAD * 2;
+
   const ordered = [...sessions]
     .sort((a, b) => a.date.localeCompare(b.date))
     .slice(-14);
 
-  const dayLabel = (date: string) => date.slice(5); // MM-DD
-
-  const bpColumns: Column[] = ordered.map((sn) => ({
-    label: dayLabel(sn.date),
-    before: sn.preDialysisBP?.systolic ?? null,
-    after: sn.postDialysisBP?.systolic ?? null,
-  }));
-
-  const weightColumns: Column[] = ordered.map((sn) => ({
-    label: dayLabel(sn.date),
-    before: sn.weightBefore,
-    after: sn.weightAfter,
-  }));
+  const labels = ordered.map((sn) => sn.date.slice(5)); // MM-DD
 
   if (ordered.length === 0) {
     return (
@@ -156,27 +199,60 @@ export default function TrendChart({
     );
   }
 
+  const bpSeries: Series[] = [
+    {
+      values: ordered.map((sn) => sn.preDialysisBP?.systolic),
+      color: "#9bbce0",
+      legend: "до",
+    },
+    {
+      values: ordered.map((sn) => sn.postDialysisBP?.systolic),
+      color: "#e74c3c",
+      legend: "после",
+    },
+  ];
+
+  const weightSeries: Series[] = [
+    {
+      values: ordered.map((sn) => sn.weightBefore),
+      color: "#9bbce0",
+      legend: "до",
+    },
+    {
+      values: ordered.map((sn) => sn.weightAfter),
+      color: "#4a90d9",
+      legend: "после",
+    },
+  ];
+
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
-      <Text style={s.title}>Давление, верхнее (мм рт.ст.)</Text>
-      <MiniBars
-        columns={bpColumns}
-        unit="мм рт.ст."
-        reference={180}
-        afterColor="#e74c3c"
+      <Text style={s.title}>Давление верхнее (мм рт.ст.)</Text>
+      <LineChart
+        width={chartWidth}
+        series={bpSeries}
+        labels={labels}
+        reference={{ value: 180, color: "#e74c3c" }}
+      />
+      <Legend
+        items={[
+          { color: "#9bbce0", text: "до" },
+          { color: "#e74c3c", text: "после" },
+          { color: "#e74c3c", text: "порог 180" },
+        ]}
       />
 
       <Text style={[s.title, s.titleGap]}>Вес (кг)</Text>
-      <MiniBars columns={weightColumns} unit="кг" afterColor="#4a90d9" />
-
-      <Text style={s.hint}>
-        Красная линия 180 — порог, при превышении сообщить врачу.
-      </Text>
+      <LineChart width={chartWidth} series={weightSeries} labels={labels} />
+      <Legend
+        items={[
+          { color: "#9bbce0", text: "до" },
+          { color: "#4a90d9", text: "после" },
+        ]}
+      />
     </ScrollView>
   );
 }
-
-const Y_AXIS_WIDTH = 34;
 
 const s = StyleSheet.create({
   container: {
@@ -184,116 +260,42 @@ const s = StyleSheet.create({
     backgroundColor: "#f4f7fb",
   },
   content: {
-    padding: 16,
-    paddingBottom: 60,
+    paddingHorizontal: OUTER_PAD,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 10,
+    color: "#444",
+    marginBottom: 2,
   },
   titleGap: {
-    marginTop: 18,
-  },
-  plotRow: {
-    flexDirection: "row",
-  },
-  yAxis: {
-    width: Y_AXIS_WIDTH,
-    height: CHART_HEIGHT,
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    paddingRight: 4,
-  },
-  yAxisSpacer: {
-    width: Y_AXIS_WIDTH,
-  },
-  axisLabel: {
-    fontSize: 12,
-    color: "#999",
-  },
-  plot: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e6ecf5",
-    position: "relative",
-  },
-  column: {
-    alignItems: "center",
-    justifyContent: "flex-end",
-    height: "100%",
-  },
-  bars: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  bar: {
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-  },
-  refLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 0,
-    borderTopWidth: 1,
-    borderTopColor: "#e74c3c",
-    borderStyle: "dashed",
-  },
-  refLabel: {
-    position: "absolute",
-    right: 2,
-    top: -14,
-    fontSize: 11,
-    color: "#e74c3c",
-    fontWeight: "700",
-  },
-  labelsRow: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-  row: {
-    flexDirection: "row",
-  },
-  dateLabel: {
-    fontSize: 11,
-    color: "#888",
-    textAlign: "center",
+    marginTop: 10,
   },
   legend: {
     flexDirection: "row",
-    gap: 16,
-    marginTop: 10,
+    gap: 14,
+    marginTop: 2,
   },
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 5,
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendText: {
-    fontSize: 14,
-    color: "#555",
+    fontSize: 12,
+    color: "#666",
   },
   empty: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#888",
     textAlign: "center",
-    marginTop: 40,
-  },
-  hint: {
-    fontSize: 13,
-    color: "#999",
-    marginTop: 24,
-    fontStyle: "italic",
+    marginTop: 30,
   },
 });
