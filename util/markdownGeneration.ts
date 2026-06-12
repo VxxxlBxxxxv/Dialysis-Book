@@ -61,7 +61,8 @@ function formatSession(s: DialysisSession): string {
   const uf = fluidRemoved(s.weightBefore, s.weightAfter);
   const ufKg = uf !== null ? `${uf.toFixed(1)} кг` : NO_DATA;
   const notes = (s.notes ?? "").trim();
-  const pulse = hasValue(s.pulse) ? `${s.pulse} уд/мин` : NO_DATA;
+  const pulseStr = (p: number | null | undefined) =>
+    hasValue(p) ? `${p} уд/мин` : NO_DATA;
   const symptoms =
     Array.isArray(s.symptoms) && s.symptoms.length > 0
       ? s.symptoms.join(", ")
@@ -77,8 +78,9 @@ function formatSession(s: DialysisSession): string {
 | Вес после | ${formatKg(s.weightAfter)} |
 | УФ (удалено) | ${ufKg} |
 | АД до | ${withBpUnit(formatBP(s.preDialysisBP))} |
+| ЧСС до | ${pulseStr(s.pulsePre)} |
 | АД после | ${withBpUnit(formatBP(s.postDialysisBP))} |
-| ЧСС | ${pulse} |
+| ЧСС после | ${pulseStr(s.pulsePost)} |
 
 **Симптомы:** ${symptoms}
 **Примечания:** ${notes.length > 0 ? notes : "—"}

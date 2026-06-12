@@ -34,7 +34,9 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
     preBP: bpToString(session.preDialysisBP),
     midBP: bpToString(session.midDialysisBP),
     postBP: bpToString(session.postDialysisBP),
-    pulse: hasValue(session.pulse) ? String(session.pulse) : "",
+    pulsePre: hasValue(session.pulsePre) ? String(session.pulsePre) : "",
+    pulseMid: hasValue(session.pulseMid) ? String(session.pulseMid) : "",
+    pulsePost: hasValue(session.pulsePost) ? String(session.pulsePost) : "",
     symptoms: session.symptoms ?? [],
   }));
 
@@ -73,24 +75,43 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         preDialysisBP: parseBP(data.preBP),
         midDialysisBP: parseBP(data.midBP),
         postDialysisBP: parseBP(data.postBP),
-        pulse: toNum(data.pulse),
+        pulsePre: toNum(data.pulsePre),
+        pulseMid: toNum(data.pulseMid),
+        pulsePost: toNum(data.pulsePost),
         symptoms: data.symptoms,
       },
       session.id
     );
   }
 
-  const bpField = (label: string, value: string, onChange: (v: string) => void) => (
+  // Поле замера: давление + пульс рядом (пульс измеряется при каждом замере АД).
+  const bpField = (
+    label: string,
+    bpValue: string,
+    onBp: (v: string) => void,
+    pulseValue: string,
+    onPulse: (v: string) => void
+  ) => (
     <View style={s.section}>
       <Text style={s.label}>{label}</Text>
-      <TextInput
-        style={s.bpInput}
-        value={value}
-        placeholder="120/80"
-        placeholderTextColor="#bbb"
-        keyboardType="numeric"
-        onChangeText={(t) => onChange(t.replace(/-/g, "/"))}
-      />
+      <View style={s.bpRow}>
+        <TextInput
+          style={[s.bpInput, s.bpInputFlex]}
+          value={bpValue}
+          placeholder="120/80"
+          placeholderTextColor="#bbb"
+          keyboardType="numeric"
+          onChangeText={(t) => onBp(t.replace(/-/g, "/"))}
+        />
+        <TextInput
+          style={[s.bpInput, s.pulseInput]}
+          value={pulseValue}
+          placeholder="пульс"
+          placeholderTextColor="#bbb"
+          keyboardType="numeric"
+          onChangeText={(t) => onPulse(t.replace(/[^0-9]/g, ""))}
+        />
+      </View>
     </View>
   );
 
@@ -187,50 +208,27 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         />
       </View>
 
-      {bpField("Давление до", data.preBP, (t) => setData((p) => ({ ...p, preBP: t })))}
-      {bpField("Давление 2 ч", data.midBP, (t) => setData((p) => ({ ...p, midBP: t })))}
-      {bpField("Давление после", data.postBP, (t) =>
-        setData((p) => ({ ...p, postBP: t }))
+      {bpField(
+        "Давление до",
+        data.preBP,
+        (t) => setData((p) => ({ ...p, preBP: t })),
+        data.pulsePre,
+        (t) => setData((p) => ({ ...p, pulsePre: t }))
       )}
-
-      <View style={s.section}>
-        <Text style={s.label}>Пульс (уд/мин)</Text>
-        <TextInput
-          style={s.bpInput}
-          value={data.pulse}
-          placeholder="70"
-          placeholderTextColor="#bbb"
-          keyboardType="numeric"
-          onChangeText={(t) =>
-            setData((p) => ({ ...p, pulse: t.replace(/[^0-9]/g, "") }))
-          }
-        />
-      </View>
-
-      <View style={s.section}>
-        <Text style={s.label}>Симптомы</Text>
-        <View style={s.symptomWrap}>
-          {SYMPTOMS.map((symptom) => {
-            const active = data.symptoms.includes(symptom);
-            return (
-              <TouchableOpacity
-                key={symptom}
-                style={[s.symptomChip, active && s.symptomChipActive]}
-                onPress={() => toggleSymptom(symptom)}
-              >
-                <Text
-                  style={[
-                    s.symptomText,
-                    active && s.symptomTextActive,
-                  ]}
-                >
-                  {symptom}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+      {bpField(
+        "Давление 2 ч",
+        data.midBP,
+        (t) => setData((p) => ({ ...p, midBP: t })),
+        data.pulseMid,
+        (t) => setData((p) => ({ ...p, pulseMid: t }))
+      )}
+      {bpField(
+        "Давление после",
+        data.postBP,
+        (t) => setData((p) => ({ ...p, postBP: t })),
+        data.pulsePost,
+        (t) => setData((p) => ({ ...p, pulsePost: t }))
+      )}
 
       <View style={s.weightWrap}>
         {deltaAfter !== null && (
@@ -257,6 +255,26 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
       {fluidRemoved !== null && fluidRemoved > 0 && (
         <Text style={s.fluidHint}>Слито жидкости: {fluidRemoved.toFixed(1)} кг</Text>
       )}
+
+      <View style={s.section}>
+        <Text style={s.label}>Симптомы</Text>
+        <View style={s.symptomWrap}>
+          {SYMPTOMS.map((symptom) => {
+            const active = data.symptoms.includes(symptom);
+            return (
+              <TouchableOpacity
+                key={symptom}
+                style={[s.symptomChip, active && s.symptomChipActive]}
+                onPress={() => toggleSymptom(symptom)}
+              >
+                <Text style={[s.symptomText, active && s.symptomTextActive]}>
+                  {symptom}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
 
       <View style={s.section}>
         <Text style={s.label}>Комментарий</Text>
@@ -375,6 +393,17 @@ const s = StyleSheet.create({
     textAlign: "center",
     borderWidth: 1,
     borderColor: "#e0e0e0",
+  },
+  bpRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  bpInputFlex: {
+    flex: 2,
+  },
+  pulseInput: {
+    flex: 1,
+    fontSize: 18,
   },
   notesInput: {
     padding: 12,

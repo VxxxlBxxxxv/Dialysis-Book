@@ -15,7 +15,9 @@ function Session({
   preDialysisBP,
   midDialysisBP,
   postDialysisBP,
-  pulse,
+  pulsePre,
+  pulseMid,
+  pulsePost,
   symptoms,
   onEdit,
 }) {
@@ -26,6 +28,7 @@ function Session({
   const midBP = formatBP(midDialysisBP);
   const postBP = formatBP(postDialysisBP);
   const symptomList = Array.isArray(symptoms) ? symptoms : [];
+  const pulseSuffix = (p) => (hasValue(p) ? ` · пульс ${p}` : "");
 
   return (
     <Pressable
@@ -65,28 +68,30 @@ function Session({
         {preBP !== NO_DATA && (
           <View style={styles.row}>
             <Ionicons name="heart-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>До: {preBP}</Text>
+            <Text style={styles.valueText}>
+              До: {preBP}
+              {pulseSuffix(pulsePre)}
+            </Text>
           </View>
         )}
 
         {midBP !== NO_DATA && (
           <View style={styles.row}>
             <Ionicons name="heart-half-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>2ч: {midBP}</Text>
+            <Text style={styles.valueText}>
+              2ч: {midBP}
+              {pulseSuffix(pulseMid)}
+            </Text>
           </View>
         )}
 
         {postBP !== NO_DATA && (
           <View style={styles.row}>
             <Ionicons name="heart" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>После: {postBP}</Text>
-          </View>
-        )}
-
-        {hasValue(pulse) && (
-          <View style={styles.row}>
-            <Ionicons name="pulse-outline" size={20} color="#e74c3c" />
-            <Text style={styles.valueText}>Пульс: {pulse} уд/мин</Text>
+            <Text style={styles.valueText}>
+              После: {postBP}
+              {pulseSuffix(pulsePost)}
+            </Text>
           </View>
         )}
 

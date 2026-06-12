@@ -32,8 +32,11 @@ export type DialysisSession = {
   preDialysisBP: BloodPressure;
   midDialysisBP: BloodPressure;
   postDialysisBP: BloodPressure;
-  // Пульс (уд/мин). Опционально — старые записи без поля открываются через ?.
-  pulse?: number | null;
+  // Пульс (уд/мин) при каждом замере давления. Опционально — старые записи
+  // без полей открываются через ?.
+  pulsePre?: number | null;
+  pulseMid?: number | null;
+  pulsePost?: number | null;
   // Отмеченные симптомы (подмножество SYMPTOMS). Опционально по той же причине.
   symptoms?: string[];
 };

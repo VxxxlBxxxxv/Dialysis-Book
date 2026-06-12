@@ -2,7 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { DialysisSession } from "../types";
 import { hasValue } from "../util/format";
 
-const CHART_HEIGHT = 150;
+const CHART_HEIGHT = 120;
 const COLUMN_WIDTH = 44;
 const BAR_WIDTH = 14;
 
@@ -194,7 +194,7 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   titleGap: {
-    marginTop: 28,
+    marginTop: 18,
   },
   plotRow: {
     flexDirection: "row",

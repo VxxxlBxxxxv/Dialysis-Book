@@ -1,13 +1,13 @@
 import { useContext, useLayoutEffect } from "react";
-import { Alert, KeyboardAvoidingView, Platform, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { SessionsContext } from "../store/session-context";
 import Sessions from "../components/Sessions";
+import TrendChart from "../components/TrendChart";
 import Button from "../components/HeaderButton";
 import { useNavigation } from "@react-navigation/native";
 import { generateAndShareMarkdown } from "../util/markdownGeneration";
 import { exportBackup, pickBackup, mergeSessions } from "../util/backup";
-import { toggleReminders, remindersEnabled } from "../util/reminders";
 
 const AllDialysisSessions = () => {
   const { sessions, replaceAllSessions } = useContext(SessionsContext);
@@ -26,17 +26,10 @@ const AllDialysisSessions = () => {
     );
   }
 
-  async function openBackupMenu() {
-    const remOn = await remindersEnabled();
+  function openBackupMenu() {
     Alert.alert("Меню", "Выберите действие", [
       { text: "Сохранить копию", onPress: () => exportBackup(sessions) },
       { text: "Восстановить из копии", onPress: handleRestore },
-      {
-        text: remOn ? "Выключить напоминания" : "Включить напоминания (Пн/Ср/Пт)",
-        onPress: () => {
-          toggleReminders();
-        },
-      },
       { text: "Отмена", style: "cancel" },
     ]);
   }
@@ -52,20 +45,12 @@ const AllDialysisSessions = () => {
         />
       ),
       headerRight: () => (
-        <View style={{ flexDirection: "row" }}>
-          <Button
-            name="bar-chart-outline"
-            size={20}
-            color="white"
-            onPress={() => navigation.navigate("Trend" as never)}
-          />
-          <Button
-            name="save-outline"
-            size={20}
-            color="white"
-            onPress={openBackupMenu}
-          />
-        </View>
+        <Button
+          name="save-outline"
+          size={20}
+          color="white"
+          onPress={openBackupMenu}
+        />
       ),
     });
   }, [navigation, sessions]);
@@ -75,9 +60,26 @@ const AllDialysisSessions = () => {
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Sessions sessions={sessions} />
+      {/* Верхняя половина — список сеансов, нижняя — график динамики. */}
+      <View style={styles.listHalf}>
+        <Sessions sessions={sessions} />
+      </View>
+      <View style={styles.chartHalf}>
+        <TrendChart sessions={sessions} />
+      </View>
     </KeyboardAvoidingView>
   );
 };
 
 export default AllDialysisSessions;
+
+const styles = StyleSheet.create({
+  listHalf: {
+    flex: 1,
+  },
+  chartHalf: {
+    flex: 1,
+    borderTopWidth: 1,
+    borderTopColor: "#d6e0ee",
+  },
+});

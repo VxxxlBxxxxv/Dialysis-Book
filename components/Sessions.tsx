@@ -109,7 +109,9 @@ const Sessions = ({ sessions }: { sessions: DialysisSession[] }) => {
               preDialysisBP={item.preDialysisBP}
               midDialysisBP={item.midDialysisBP}
               postDialysisBP={item.postDialysisBP}
-              pulse={item.pulse}
+              pulsePre={item.pulsePre}
+              pulseMid={item.pulseMid}
+              pulsePost={item.pulsePost}
               symptoms={item.symptoms}
               onEdit={startEdit}
             />
