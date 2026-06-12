@@ -1,5 +1,5 @@
 import { useContext, useLayoutEffect } from "react";
-import { Alert, KeyboardAvoidingView, Platform } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, View } from "react-native";
 
 import { SessionsContext } from "../store/session-context";
 import Sessions from "../components/Sessions";
@@ -44,12 +44,20 @@ const AllDialysisSessions = () => {
         />
       ),
       headerRight: () => (
-        <Button
-          name="save-outline"
-          size={20}
-          color="white"
-          onPress={openBackupMenu}
-        />
+        <View style={{ flexDirection: "row" }}>
+          <Button
+            name="bar-chart-outline"
+            size={20}
+            color="white"
+            onPress={() => navigation.navigate("Trend" as never)}
+          />
+          <Button
+            name="save-outline"
+            size={20}
+            color="white"
+            onPress={openBackupMenu}
+          />
+        </View>
       ),
     });
   }, [navigation, sessions]);

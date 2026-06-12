@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AllDialysisSessions from "./screens/AllDialysisSessions";
+import TrendScreen from "./screens/TrendScreen";
 import { NavigationContainer } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { View, StyleSheet } from "react-native";
@@ -26,6 +27,11 @@ export default function App() {
               name="Dialysis Sessions"
               component={AllDialysisSessions}
               options={{ title: "Дневник диализа" }}
+            />
+            <Stack.Screen
+              name="Trend"
+              component={TrendScreen}
+              options={{ title: "Динамика" }}
             />
           </Stack.Navigator>
         </NavigationContainer>
