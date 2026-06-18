@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type { Ref } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,9 +17,21 @@ interface Props {
   onSave: (data: Omit<DialysisSession, "id">, id: string) => void;
   onCancel: (id: string, isNew: boolean) => void;
   onDelete: (id: string) => void;
+  autoFocusFirstEmpty?: boolean;
 }
 
-const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) => {
+const SessionEditForm = ({
+  session,
+  isNew,
+  onSave,
+  onCancel,
+  onDelete,
+  autoFocusFirstEmpty = false,
+}: Props) => {
+  const weightBeforeRef = useRef<TextInput>(null);
+  const preBPRef = useRef<TextInput>(null);
+  const weightAfterRef = useRef<TextInput>(null);
+  const postBPRef = useRef<TextInput>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
@@ -55,6 +68,26 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
   const weightAfterNum = data.weightAfter !== "" ? parseFloat(data.weightAfter) : 0;
   const center = dryWeightNum > 0 ? dryWeightNum : 50;
 
+  useEffect(() => {
+    if (!autoFocusFirstEmpty) return;
+
+    const timer = setTimeout(() => {
+      if (data.weightBefore === "") {
+        weightBeforeRef.current?.focus();
+      } else if (data.preBP === "") {
+        preBPRef.current?.focus();
+      } else if (data.weightAfter === "") {
+        weightAfterRef.current?.focus();
+      } else if (data.postBP === "") {
+        postBPRef.current?.focus();
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+    // Запускаем только при открытии формы: дальнейший ввод не должен прыгать по полям.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoFocusFirstEmpty, session.id]);
+
   const deltaBefore =
     weightBeforeNum > 0 && dryWeightNum > 0 ? weightBeforeNum - dryWeightNum : null;
   const deltaAfter =
@@ -90,12 +123,14 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
     bpValue: string,
     onBp: (v: string) => void,
     pulseValue: string,
-    onPulse: (v: string) => void
+    onPulse: (v: string) => void,
+    inputRef?: Ref<TextInput>
   ) => (
     <View style={s.section}>
       <Text style={s.label}>{label}</Text>
       <View style={s.bpRow}>
         <TextInput
+          ref={inputRef}
           style={[s.bpInput, s.bpInputFlex]}
           value={bpValue}
           placeholder="120/80"
@@ -202,6 +237,7 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         )}
         <WeightInput
           label="Вес до (кг)"
+          inputRef={weightBeforeRef}
           value={data.weightBefore}
           onChange={(t) => setData((p) => ({ ...p, weightBefore: t }))}
           centerValue={center}
@@ -213,7 +249,8 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         data.preBP,
         (t) => setData((p) => ({ ...p, preBP: t })),
         data.pulsePre,
-        (t) => setData((p) => ({ ...p, pulsePre: t }))
+        (t) => setData((p) => ({ ...p, pulsePre: t })),
+        preBPRef
       )}
       {bpField(
         "Давление 2 ч",
@@ -227,7 +264,8 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         data.postBP,
         (t) => setData((p) => ({ ...p, postBP: t })),
         data.pulsePost,
-        (t) => setData((p) => ({ ...p, pulsePost: t }))
+        (t) => setData((p) => ({ ...p, pulsePost: t })),
+        postBPRef
       )}
 
       <View style={s.weightWrap}>
@@ -239,6 +277,7 @@ const SessionEditForm = ({ session, isNew, onSave, onCancel, onDelete }: Props) 
         )}
         <WeightInput
           label="Вес после (кг)"
+          inputRef={weightAfterRef}
           value={data.weightAfter}
           onChange={(t) => setData((p) => ({ ...p, weightAfter: t }))}
           centerValue={center}

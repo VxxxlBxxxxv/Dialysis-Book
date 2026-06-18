@@ -9,6 +9,7 @@ interface SessionsContextType {
   deleteSession: (id: string) => void;
   updateSession: (session: DialysisSession, id: string) => void;
   replaceAllSessions: (sessions: DialysisSession[]) => void;
+  markSessionsExported: (ids: string[], exportedAt: string) => void;
 }
 
 export const SessionsContext = createContext<SessionsContextType>({
@@ -17,6 +18,7 @@ export const SessionsContext = createContext<SessionsContextType>({
   updateSession: () => {},
   deleteSession: () => {},
   replaceAllSessions: () => {},
+  markSessionsExported: () => {},
 });
 
 const STORAGE_KEY = "dialysis_sessions";
@@ -111,12 +113,22 @@ export function SessionsContextProvider({ children }: SessionsProviderProps) {
     setSessionsState(ensureUniqueIds(next));
   }
 
+  function markSessionsExported(ids: string[], exportedAt: string) {
+    const idSet = new Set(ids);
+    setSessionsState((prevSessions) =>
+      prevSessions.map((session) =>
+        idSet.has(session.id) ? { ...session, exportedAt } : session
+      )
+    );
+  }
+
   const value: SessionsContextType = {
     sessions,
     addSession,
     deleteSession,
     updateSession,
     replaceAllSessions,
+    markSessionsExported,
   };
 
   return (

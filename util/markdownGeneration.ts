@@ -112,17 +112,24 @@ exported: ${todayLocalIso()}
 }
 
 export const generateAndShareMarkdown = async (
-  sessions: DialysisSession[]
+  sessions: DialysisSession[],
+  onExported?: (ids: string[], exportedAt: string) => void
 ) => {
   if (sessions.length === 0) {
     Alert.alert("Экспорт", "Нет сеансов для экспорта.");
     return;
   }
 
+  const pending = sessions.filter((session) => !session.exportedAt);
+  if (pending.length === 0) {
+    Alert.alert("Экспорт", "Новых сеансов для экспорта нет.");
+    return;
+  }
+
   // Фильтрация невалидных дат
   const valid: DialysisSession[] = [];
   let invalidCount = 0;
-  for (const s of sessions) {
+  for (const s of pending) {
     if (parseDateParts(s.date)) {
       valid.push(s);
     } else {
@@ -133,7 +140,7 @@ export const generateAndShareMarkdown = async (
   if (valid.length === 0) {
     Alert.alert(
       "Экспорт",
-      `Все ${sessions.length} сеансов имеют некорректную дату — экспорт отменён.`
+      `Все ${pending.length} новых сеансов имеют некорректную дату — экспорт отменён.`
     );
     return;
   }
@@ -157,13 +164,17 @@ export const generateAndShareMarkdown = async (
       : allMonths.slice(-1);
     const fileUris: string[] = [];
 
+    const exportedSessionIds: string[] = [];
+
     for (const month of months) {
-      const content = buildMonthlyMarkdown(month, byMonth.get(month)!);
+      const monthSessions = byMonth.get(month)!;
+      const content = buildMonthlyMarkdown(month, monthSessions);
       const uri = FileSystem.documentDirectory + `dialysis-${month}.md`;
       await FileSystem.writeAsStringAsync(uri, content, {
         encoding: FileSystem.EncodingType.UTF8,
       });
       fileUris.push(uri);
+      exportedSessionIds.push(...monthSessions.map((session) => session.id));
     }
 
     if (!(await Sharing.isAvailableAsync())) {
@@ -173,6 +184,8 @@ export const generateAndShareMarkdown = async (
       );
       return;
     }
+
+    const exportedAt = todayLocalIso();
 
     // Шерим каждый файл по очереди. Отмена одного диалога не должна ронять остальные.
     for (let i = 0; i < fileUris.length; i++) {
@@ -185,6 +198,15 @@ export const generateAndShareMarkdown = async (
         console.warn(`Share dialog error for ${months[i]}:`, shareErr);
       }
     }
+
+    if (exportedSessionIds.length > 0) {
+      onExported?.(exportedSessionIds, exportedAt);
+    }
+
+    Alert.alert(
+      "Экспорт завершён",
+      `Экспортировано новых сеансов: ${exportedSessionIds.length}. Повторный экспорт возьмёт только следующие новые записи.`
+    );
 
     if (invalidCount > 0) {
       Alert.alert(

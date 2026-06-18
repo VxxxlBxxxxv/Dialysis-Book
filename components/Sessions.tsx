@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GlobalColors from "../constants/Colors";
@@ -12,11 +12,32 @@ import { DialysisSession } from "../types";
 
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 
-const Sessions = ({ sessions }: { sessions: DialysisSession[] }) => {
+function hasEmptyCoreFields(session: DialysisSession): boolean {
+  return (
+    !hasValue(session.weightBefore) ||
+    !hasValue(session.weightAfter) ||
+    !hasValue(session.preDialysisBP?.systolic) ||
+    !hasValue(session.preDialysisBP?.diastolic) ||
+    !hasValue(session.postDialysisBP?.systolic) ||
+    !hasValue(session.postDialysisBP?.diastolic)
+  );
+}
+
+const Sessions = ({
+  sessions,
+  onEditingChange,
+}: {
+  sessions: DialysisSession[];
+  onEditingChange?: (isEditing: boolean) => void;
+}) => {
   const { addSession, updateSession, deleteSession } = useContext(SessionsContext);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newId, setNewId] = useState<string | null>(null);
   const listRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    onEditingChange?.(editingId !== null);
+  }, [editingId, onEditingChange]);
 
   function startNew() {
     const now = new Date();
@@ -70,8 +91,11 @@ const Sessions = ({ sessions }: { sessions: DialysisSession[] }) => {
         ref={listRef}
         data={sessions}
         keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
         keyboardDismissMode="on-drag"
+        nestedScrollEnabled
+        automaticallyAdjustKeyboardInsets
+        removeClippedSubviews={false}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           editingId === null ? (
@@ -92,6 +116,10 @@ const Sessions = ({ sessions }: { sessions: DialysisSession[] }) => {
             <SessionEditForm
               session={item}
               isNew={item.id === newId}
+              autoFocusFirstEmpty={
+                item.id === newId ||
+                (item.id === sessions[0]?.id && hasEmptyCoreFields(item))
+              }
               onSave={handleSave}
               onCancel={handleCancel}
               onDelete={handleDelete}
@@ -113,6 +141,7 @@ const Sessions = ({ sessions }: { sessions: DialysisSession[] }) => {
               pulseMid={item.pulseMid}
               pulsePost={item.pulsePost}
               symptoms={item.symptoms}
+              exportedAt={item.exportedAt}
               onEdit={startEdit}
             />
           )

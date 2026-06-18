@@ -19,6 +19,7 @@ function Session({
   pulseMid,
   pulsePost,
   symptoms,
+  exportedAt,
   onEdit,
 }) {
   const uf = fluidRemoved(weightBefore, weightAfter);
@@ -103,6 +104,13 @@ function Session({
         )}
       </View>
 
+      {exportedAt ? (
+        <View style={styles.exportRow}>
+          <Ionicons name="cloud-done-outline" size={16} color="#2f80d0" />
+          <Text style={styles.exportText}>Экспортировано: {exportedAt}</Text>
+        </View>
+      ) : null}
+
       {notes ? (
         <View style={styles.notesRow}>
           <Ionicons
@@ -174,6 +182,17 @@ const styles = StyleSheet.create({
     color: "#4a90d9",
     fontWeight: "600",
     marginLeft: 4,
+  },
+  exportRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    gap: 5,
+  },
+  exportText: {
+    fontSize: 13,
+    color: "#2f80d0",
+    fontWeight: "600",
   },
   notesRow: {
     flexDirection: "row",

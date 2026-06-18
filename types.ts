@@ -39,4 +39,7 @@ export type DialysisSession = {
   pulsePost?: number | null;
   // Отмеченные симптомы (подмножество SYMPTOMS). Опционально по той же причине.
   symptoms?: string[];
+  // Дата, когда сеанс попал в Markdown-экспорт. Нужна, чтобы повторный экспорт
+  // отдавал только новые сеансы.
+  exportedAt?: string | null;
 };

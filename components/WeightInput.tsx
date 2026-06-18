@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 
 interface WeightInputProps {
@@ -5,6 +6,7 @@ interface WeightInputProps {
   value: string;
   onChange: (value: string) => void;
   centerValue?: number;
+  inputRef?: Ref<TextInput>;
   // legacy props (ignored, kept for compatibility)
   rangePadding?: number;
   rangeBelow?: number;
@@ -16,12 +18,14 @@ export default function WeightInput({
   value,
   onChange,
   centerValue = 50,
+  inputRef,
 }: WeightInputProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <View style={styles.row}>
         <TextInput
+          ref={inputRef}
           style={styles.input}
           value={value}
           onChangeText={onChange}

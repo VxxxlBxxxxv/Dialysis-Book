@@ -1,4 +1,4 @@
-import { useContext, useLayoutEffect } from "react";
+import { useContext, useLayoutEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 
 import { SessionsContext } from "../store/session-context";
@@ -10,7 +10,8 @@ import { generateAndShareMarkdown } from "../util/markdownGeneration";
 import { exportBackup, pickBackup, mergeSessions } from "../util/backup";
 
 const AllDialysisSessions = () => {
-  const { sessions, replaceAllSessions } = useContext(SessionsContext);
+  const { sessions, replaceAllSessions, markSessionsExported } = useContext(SessionsContext);
+  const [isEditing, setIsEditing] = useState(false);
 
   const navigation = useNavigation();
 
@@ -41,7 +42,7 @@ const AllDialysisSessions = () => {
           name="share"
           size={18}
           color="white"
-          onPress={() => generateAndShareMarkdown(sessions)}
+          onPress={() => generateAndShareMarkdown(sessions, markSessionsExported)}
         />
       ),
       headerRight: () => (
@@ -61,12 +62,14 @@ const AllDialysisSessions = () => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Верхняя половина — список сеансов, нижняя — график динамики. */}
-      <View style={styles.listHalf}>
-        <Sessions sessions={sessions} />
+      <View style={isEditing ? styles.listFull : styles.listHalf}>
+        <Sessions sessions={sessions} onEditingChange={setIsEditing} />
       </View>
-      <View style={styles.chartHalf}>
-        <TrendChart sessions={sessions} />
-      </View>
+      {!isEditing && (
+        <View style={styles.chartHalf}>
+          <TrendChart sessions={sessions} />
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -75,6 +78,9 @@ export default AllDialysisSessions;
 
 const styles = StyleSheet.create({
   listHalf: {
+    flex: 1,
+  },
+  listFull: {
     flex: 1,
   },
   chartHalf: {
