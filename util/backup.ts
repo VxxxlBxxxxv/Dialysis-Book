@@ -40,24 +40,43 @@ export async function exportBackup(sessions: DialysisSession[]): Promise<void> {
   };
 
   try {
-    const uri =
-      FileSystem.documentDirectory + `dialysis-backup-${todayLocalIso()}.json`;
+    const fileName = `dialysis-backup-${todayLocalIso()}.json`;
+    const uri = FileSystem.documentDirectory + fileName;
     await FileSystem.writeAsStringAsync(uri, JSON.stringify(payload, null, 2), {
       encoding: FileSystem.EncodingType.UTF8,
     });
 
     if (!(await Sharing.isAvailableAsync())) {
       Alert.alert(
-        "Резервная копия",
-        `Сохранена в память приложения. Шеринг недоступен.`
+        "Резервная копия создана",
+        `Файл сохранён в память приложения: ${fileName}. Системное сохранение недоступно.`
       );
       return;
     }
 
-    await Sharing.shareAsync(uri, {
-      mimeType: "application/json",
-      dialogTitle: "Сохранить резервную копию",
-    });
+    try {
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/json",
+        dialogTitle: "Сохранить резервную копию",
+      });
+      return;
+    } catch (shareErr) {
+      console.warn("Backup JSON share error, retrying as text:", shareErr);
+    }
+
+    try {
+      await Sharing.shareAsync(uri, {
+        mimeType: "text/plain",
+        dialogTitle: "Сохранить резервную копию",
+      });
+      return;
+    } catch (fallbackErr) {
+      console.warn("Backup fallback share error:", fallbackErr);
+      Alert.alert(
+        "Резервная копия создана",
+        `Файл сохранён в память приложения: ${fileName}. Системный диалог сохранения не открылся.`
+      );
+    }
   } catch (err) {
     console.error("Backup export error:", err);
     Alert.alert("Ошибка", "Не удалось создать резервную копию.");

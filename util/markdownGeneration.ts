@@ -147,7 +147,14 @@ export const generateAndShareMarkdown = async (
       byMonth.set(key, arr);
     }
 
-    const months = [...byMonth.keys()].sort();
+    // Быстрый экспорт из шапки нужен для текущего отчётного месяца.
+    // Раньше приложение шарило все месяцы по возрастанию: при данных за май+июнь
+    // первым открывался майский файл, и пользователь видел «экспортируется май».
+    const currentMonth = todayLocalIso().slice(0, 7);
+    const allMonths = [...byMonth.keys()].sort();
+    const months = byMonth.has(currentMonth)
+      ? [currentMonth]
+      : allMonths.slice(-1);
     const fileUris: string[] = [];
 
     for (const month of months) {
@@ -182,7 +189,7 @@ export const generateAndShareMarkdown = async (
     if (invalidCount > 0) {
       Alert.alert(
         "Экспорт завершён",
-        `Пропущено ${invalidCount} сеансов с некорректной датой. Экспортировано ${valid.length} в ${fileUris.length} файлов.`
+        `Пропущено ${invalidCount} сеансов с некорректной датой. Экспортировано ${months.length} мес. из ${valid.length} корректных сеансов.`
       );
     }
   } catch (err) {
