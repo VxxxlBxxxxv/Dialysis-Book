@@ -63,6 +63,8 @@ function formatSession(s: DialysisSession): string {
   const notes = (s.notes ?? "").trim();
   const pulseStr = (p: number | null | undefined) =>
     hasValue(p) ? `${p} уд/мин` : NO_DATA;
+  const enteredAtStr = (value: string | null | undefined) =>
+    value ? value : NO_DATA;
   const symptoms =
     Array.isArray(s.symptoms) && s.symptoms.length > 0
       ? s.symptoms.join(", ")
@@ -78,8 +80,13 @@ function formatSession(s: DialysisSession): string {
 | Вес после | ${formatKg(s.weightAfter)} |
 | УФ (удалено) | ${ufKg} |
 | АД до | ${withBpUnit(formatBP(s.preDialysisBP))} |
+| Время ввода АД до | ${enteredAtStr(s.preDialysisBPEnteredAt)} |
 | ЧСС до | ${pulseStr(s.pulsePre)} |
+| АД на 2ч | ${withBpUnit(formatBP(s.midDialysisBP))} |
+| Время ввода АД на 2ч | ${enteredAtStr(s.midDialysisBPEnteredAt)} |
+| ЧСС на 2ч | ${pulseStr(s.pulseMid)} |
 | АД после | ${withBpUnit(formatBP(s.postDialysisBP))} |
+| Время ввода АД после | ${enteredAtStr(s.postDialysisBPEnteredAt)} |
 | ЧСС после | ${pulseStr(s.pulsePost)} |
 
 **Симптомы:** ${symptoms}

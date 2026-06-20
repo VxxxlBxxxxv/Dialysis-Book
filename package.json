@@ -4,9 +4,12 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
+    "android": "npm run apk:install",
+    "android:dev": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "apk:build": "node scripts/bump-build.js && cd android && JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 ANDROID_HOME=/home/natty/Android/sdk ./gradlew assembleRelease",
+    "apk:install": "npm run apk:build && cd android && adb install -r app/build/outputs/apk/release/app-release.apk"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -18,7 +21,6 @@
     "@react-navigation/native-stack": "^7.3.21",
     "crypto-js": "^4.2.0",
     "expo": "~54.0.0",
-    "expo-dev-client": "~6.0.21",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.22",
     "expo-secure-store": "~15.0.8",

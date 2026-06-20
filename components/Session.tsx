@@ -1,7 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { DialysisSession } from "../types";
 import { getFormattedTime, getWeekdayShortRu } from "../util/date";
 import { formatKg, formatBP, fluidRemoved, hasValue, NO_DATA } from "../util/format";
+
+type SessionProps = DialysisSession & {
+  onEdit: (id: string) => void;
+};
 
 function Session({
   date,
@@ -15,13 +20,16 @@ function Session({
   preDialysisBP,
   midDialysisBP,
   postDialysisBP,
+  preDialysisBPEnteredAt,
+  midDialysisBPEnteredAt,
+  postDialysisBPEnteredAt,
   pulsePre,
   pulseMid,
   pulsePost,
   symptoms,
   exportedAt,
   onEdit,
-}) {
+}: SessionProps) {
   const uf = fluidRemoved(weightBefore, weightAfter);
   const weekday = getWeekdayShortRu(date);
   const hasWeight = hasValue(weightBefore) || hasValue(weightAfter);
@@ -29,7 +37,10 @@ function Session({
   const midBP = formatBP(midDialysisBP);
   const postBP = formatBP(postDialysisBP);
   const symptomList = Array.isArray(symptoms) ? symptoms : [];
-  const pulseSuffix = (p) => (hasValue(p) ? ` · пульс ${p}` : "");
+  const pulseSuffix = (p: number | null | undefined) =>
+    hasValue(p) ? ` · пульс ${p}` : "";
+  const enteredAtSuffix = (value: string | null | undefined) =>
+    value ? ` · ввод ${getFormattedTime(value)}` : "";
 
   return (
     <Pressable
@@ -72,6 +83,7 @@ function Session({
             <Text style={styles.valueText}>
               До: {preBP}
               {pulseSuffix(pulsePre)}
+              {enteredAtSuffix(preDialysisBPEnteredAt)}
             </Text>
           </View>
         )}
@@ -82,6 +94,7 @@ function Session({
             <Text style={styles.valueText}>
               2ч: {midBP}
               {pulseSuffix(pulseMid)}
+              {enteredAtSuffix(midDialysisBPEnteredAt)}
             </Text>
           </View>
         )}
@@ -92,6 +105,7 @@ function Session({
             <Text style={styles.valueText}>
               После: {postBP}
               {pulseSuffix(pulsePost)}
+              {enteredAtSuffix(postDialysisBPEnteredAt)}
             </Text>
           </View>
         )}

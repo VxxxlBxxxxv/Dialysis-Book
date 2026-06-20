@@ -1,9 +1,13 @@
+import type { ComponentProps } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
 export type RootStackParamList = {
   "Dialysis Sessions": undefined;
 };
 
 export interface HeaderButtonProps {
-  name: string;
+  name: ComponentProps<typeof Ionicons>["name"];
   size: number;
   color: string;
   id?: number;
@@ -13,6 +17,7 @@ export interface HeaderButtonProps {
 export interface ButtonProps {
   onPress: () => void;
   text: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 export type BloodPressure = {
@@ -32,6 +37,11 @@ export type DialysisSession = {
   preDialysisBP: BloodPressure;
   midDialysisBP: BloodPressure;
   postDialysisBP: BloodPressure;
+  // Время фактического ввода каждого замера давления. Опционально — старые
+  // записи открываются без этих полей.
+  preDialysisBPEnteredAt?: string | null;
+  midDialysisBPEnteredAt?: string | null;
+  postDialysisBPEnteredAt?: string | null;
   // Пульс (уд/мин) при каждом замере давления. Опционально — старые записи
   // без полей открываются через ?.
   pulsePre?: number | null;

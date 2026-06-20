@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from "react-native"
 import GlobalColors from "../constants/Colors";
 
-function Info({info}) {
+function Info({ info }: { info: string }) {
     return (
       <View style={styles.infoContainer}>
         <Text style={styles.infoText} >
@@ -25,7 +25,7 @@ const styles=StyleSheet.create({
     },
     infoText:{
         color:GlobalColors.primary600,
-        fontWeight:700
+        fontWeight:"700"
     }
 
 })

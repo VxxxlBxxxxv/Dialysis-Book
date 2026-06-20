@@ -47,6 +47,9 @@ const SessionEditForm = ({
     preBP: bpToString(session.preDialysisBP),
     midBP: bpToString(session.midDialysisBP),
     postBP: bpToString(session.postDialysisBP),
+    preBPEnteredAt: session.preDialysisBPEnteredAt ?? null,
+    midBPEnteredAt: session.midDialysisBPEnteredAt ?? null,
+    postBPEnteredAt: session.postDialysisBPEnteredAt ?? null,
     pulsePre: hasValue(session.pulsePre) ? String(session.pulsePre) : "",
     pulseMid: hasValue(session.pulseMid) ? String(session.pulseMid) : "",
     pulsePost: hasValue(session.pulsePost) ? String(session.pulsePost) : "",
@@ -108,6 +111,9 @@ const SessionEditForm = ({
         preDialysisBP: parseBP(data.preBP),
         midDialysisBP: parseBP(data.midBP),
         postDialysisBP: parseBP(data.postBP),
+        preDialysisBPEnteredAt: data.preBPEnteredAt,
+        midDialysisBPEnteredAt: data.midBPEnteredAt,
+        postDialysisBPEnteredAt: data.postBPEnteredAt,
         pulsePre: toNum(data.pulsePre),
         pulseMid: toNum(data.pulseMid),
         pulsePost: toNum(data.pulsePost),
@@ -117,6 +123,22 @@ const SessionEditForm = ({
     );
   }
 
+  function setBpWithTimestamp(
+    bpKey: "preBP" | "midBP" | "postBP",
+    timeKey: "preBPEnteredAt" | "midBPEnteredAt" | "postBPEnteredAt",
+    raw: string
+  ) {
+    const value = raw.replace(/-/g, "/");
+    setData((p) => ({
+      ...p,
+      [bpKey]: value,
+      [timeKey]: value.trim() ? new Date().toISOString() : null,
+    }));
+  }
+
+  const enteredAtText = (value: string | null) =>
+    value ? `введено ${getFormattedTime(value)}` : "";
+
   // Поле замера: давление + пульс рядом (пульс измеряется при каждом замере АД).
   const bpField = (
     label: string,
@@ -124,10 +146,14 @@ const SessionEditForm = ({
     onBp: (v: string) => void,
     pulseValue: string,
     onPulse: (v: string) => void,
+    enteredAt: string | null,
     inputRef?: Ref<TextInput>
   ) => (
     <View style={s.section}>
-      <Text style={s.label}>{label}</Text>
+      <View style={s.labelRow}>
+        <Text style={s.label}>{label}</Text>
+        {enteredAt ? <Text style={s.enteredAtText}>{enteredAtText(enteredAt)}</Text> : null}
+      </View>
       <View style={s.bpRow}>
         <TextInput
           ref={inputRef}
@@ -136,7 +162,7 @@ const SessionEditForm = ({
           placeholder="120/80"
           placeholderTextColor="#bbb"
           keyboardType="numeric"
-          onChangeText={(t) => onBp(t.replace(/-/g, "/"))}
+          onChangeText={onBp}
         />
         <TextInput
           style={[s.bpInput, s.pulseInput]}
@@ -247,24 +273,27 @@ const SessionEditForm = ({
       {bpField(
         "Давление до",
         data.preBP,
-        (t) => setData((p) => ({ ...p, preBP: t })),
+        (t) => setBpWithTimestamp("preBP", "preBPEnteredAt", t),
         data.pulsePre,
         (t) => setData((p) => ({ ...p, pulsePre: t })),
+        data.preBPEnteredAt,
         preBPRef
       )}
       {bpField(
         "Давление 2 ч",
         data.midBP,
-        (t) => setData((p) => ({ ...p, midBP: t })),
+        (t) => setBpWithTimestamp("midBP", "midBPEnteredAt", t),
         data.pulseMid,
-        (t) => setData((p) => ({ ...p, pulseMid: t }))
+        (t) => setData((p) => ({ ...p, pulseMid: t })),
+        data.midBPEnteredAt
       )}
       {bpField(
         "Давление после",
         data.postBP,
-        (t) => setData((p) => ({ ...p, postBP: t })),
+        (t) => setBpWithTimestamp("postBP", "postBPEnteredAt", t),
         data.pulsePost,
         (t) => setData((p) => ({ ...p, pulsePost: t })),
+        data.postBPEnteredAt,
         postBPRef
       )}
 
@@ -417,11 +446,22 @@ const s = StyleSheet.create({
     marginTop: 8,
     marginBottom: 4,
   },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginBottom: 6,
+  },
   label: {
     fontSize: 17,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 6,
+  },
+  enteredAtText: {
+    fontSize: 13,
+    color: "#777",
+    fontWeight: "500",
   },
   bpInput: {
     padding: 12,

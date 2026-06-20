@@ -411,6 +411,8 @@ function formatWeight(value: number | null | undefined): string {
 
 function DayDataBalloon({ session, onClose }: { session: DialysisSession; onClose: () => void }) {
   const symptoms = session.symptoms?.length ? session.symptoms.join(", ") : "—";
+  const bpTime = (value: string | null | undefined) =>
+    value ? ` (${getFormattedTime(value)})` : "";
 
   return (
     <View style={s.balloon}>
@@ -423,9 +425,9 @@ function DayDataBalloon({ session, onClose }: { session: DialysisSession; onClos
         </TouchableOpacity>
       </View>
       <View style={s.balloonGrid}>
-        <Text style={s.balloonText}>АД до: {formatPressure(bpPoint(session, "pre"))}</Text>
-        <Text style={s.balloonText}>АД 2ч: {formatPressure(bpPoint(session, "mid"))}</Text>
-        <Text style={s.balloonText}>АД после: {formatPressure(bpPoint(session, "post"))}</Text>
+        <Text style={s.balloonText}>АД до: {formatPressure(bpPoint(session, "pre"))}{bpTime(session.preDialysisBPEnteredAt)}</Text>
+        <Text style={s.balloonText}>АД 2ч: {formatPressure(bpPoint(session, "mid"))}{bpTime(session.midDialysisBPEnteredAt)}</Text>
+        <Text style={s.balloonText}>АД после: {formatPressure(bpPoint(session, "post"))}{bpTime(session.postDialysisBPEnteredAt)}</Text>
         <Text style={s.balloonText}>Вес до: {formatWeight(session.weightBefore)}</Text>
         <Text style={s.balloonText}>Вес после: {formatWeight(session.weightAfter)}</Text>
         <Text style={s.balloonText}>Сухой вес: {formatWeight(session.dryWeight)}</Text>

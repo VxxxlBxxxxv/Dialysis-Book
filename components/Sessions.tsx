@@ -53,6 +53,9 @@ const Sessions = ({
       preDialysisBP: { systolic: null, diastolic: null },
       midDialysisBP: { systolic: null, diastolic: null },
       postDialysisBP: { systolic: null, diastolic: null },
+      preDialysisBPEnteredAt: null,
+      midDialysisBPEnteredAt: null,
+      postDialysisBPEnteredAt: null,
     });
     setNewId(id);
     setEditingId(id);
@@ -137,6 +140,9 @@ const Sessions = ({
               preDialysisBP={item.preDialysisBP}
               midDialysisBP={item.midDialysisBP}
               postDialysisBP={item.postDialysisBP}
+              preDialysisBPEnteredAt={item.preDialysisBPEnteredAt}
+              midDialysisBPEnteredAt={item.midDialysisBPEnteredAt}
+              postDialysisBPEnteredAt={item.postDialysisBPEnteredAt}
               pulsePre={item.pulsePre}
               pulseMid={item.pulseMid}
               pulsePost={item.pulsePost}
